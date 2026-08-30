@@ -1,0 +1,17 @@
+# backend files
+
+# user specific files
+backend/*.suo
+backend/*.user
+backend/*.sln.docstates
+
+# buildd results
+backend/bin/
+backend/obj/
+backend/debug/
+backend/release/
+backend/x64/
+
+# MSTest test results
+backend/TestResults*/
+backend/BuildLog.*
