@@ -7,6 +7,9 @@ builder.Services.AddOpenApi();
 // Add controller support
 builder.Services.AddControllers();
 
+// Register SolveContext with dependency injection
+builder.Services.AddDbContext<SolveContext>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

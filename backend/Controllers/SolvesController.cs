@@ -1,20 +1,25 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 public class SolvesController : ControllerBase {
+    private readonly SolveContext _context;
 
+    public SolvesController(SolveContext context) {
+        _context = context;
+    }
 
     [HttpGet]
-    public IActionResult GetSolves() {
-        using var db = new SolveContext();
-        return Ok(db.Solves);
+    public async Task<IActionResult> GetSolves() {
+        var solves = await _context.Solves.ToListAsync();
+        return Ok(solves);
     }
 
     [HttpPost]
-    public IActionResult PostSolve(string scramble, string penalty, int solveTime) {
+    public async Task<IActionResult> PostSolve(string scramble, string penalty, int solveTime) {
         Penalty solvePenalty;
         if (penalty == "DNF") {
             solvePenalty = Penalty.DNF;
@@ -38,9 +43,8 @@ public class SolvesController : ControllerBase {
             SolveTime = solveTime,
             TimeSolved = DateTime.Now,
         };
-        using var db = new SolveContext();
-        db.Solves.Add(solve);
-        db.SaveChanges();
+        _context.Solves.Add(solve);
+        await _context.SaveChangesAsync();
         return Ok();
     }
 }
