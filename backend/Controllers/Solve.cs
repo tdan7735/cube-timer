@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+
 namespace backend.Controllers;
 
 public enum Penalty {
@@ -17,9 +19,25 @@ public class Solve {
     public int FinalTime() {
         if (Penalty == Penalty.Plus2) {
             return SolveTime + 2000;
-        } else {
+        }
+        else {
             return SolveTime;
         }
     }
 }
 
+public class SolveContext : DbContext {
+    public DbSet<Solve> Solves { get; set; }
+
+    public string DbPath { get; set; }
+
+    public SolveContext() {
+        var folder = Environment.SpecialFolder.LocalApplicationData;
+        var path = Environment.GetFolderPath(folder);
+
+        DbPath = Path.Combine(path, "cube-timer.db");
+    }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder options)
+        => options.UseSqlite($"Data Source={DbPath}");
+}
