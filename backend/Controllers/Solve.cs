@@ -37,7 +37,6 @@ public class SolveContext : DbContext {
 
         DbPath = Path.Combine(path, "cube-timer.db");
         Console.WriteLine(DbPath);
-        Console.WriteLine(DbPath);
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)

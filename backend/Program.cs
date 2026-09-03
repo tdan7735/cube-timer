@@ -1,3 +1,5 @@
+using backend.Controllers;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -7,7 +9,7 @@ builder.Services.AddOpenApi();
 // Add controller support
 builder.Services.AddControllers();
 
-// Register SolveContext with dependency injection
+// Add database support
 builder.Services.AddDbContext<SolveContext>();
 
 var app = builder.Build();

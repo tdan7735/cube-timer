@@ -5,16 +5,11 @@ namespace backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class SolvesController : ControllerBase {
-    private readonly SolveContext _context;
-
-    public SolvesController(SolveContext context) {
-        _context = context;
-    }
+public class SolvesController(SolveContext context) : ControllerBase {
 
     [HttpGet]
     public async Task<IActionResult> GetSolves() {
-        var solves = await _context.Solves.ToListAsync();
+        var solves = await context.Solves.ToListAsync();
         return Ok(solves);
     }
 
@@ -43,8 +38,8 @@ public class SolvesController : ControllerBase {
             SolveTime = solveTime,
             TimeSolved = DateTime.Now,
         };
-        _context.Solves.Add(solve);
-        await _context.SaveChangesAsync();
+        context.Solves.Add(solve);
+        await context.SaveChangesAsync();
         return Ok();
     }
 }
