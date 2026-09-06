@@ -29,6 +29,7 @@ public class SolvesController(SolveContext context) : ControllerBase {
             solvePenalty = Penalty.None;
         }
         else {
+            Console.WriteLine("Invalid penalty");
             return BadRequest();
         }
 
