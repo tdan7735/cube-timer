@@ -6,7 +6,6 @@ public enum Penalty {
     DNF,
     Plus2,
     None,
-    DNS,
 }
 
 public class Solve {
@@ -26,19 +25,7 @@ public class Solve {
     }
 }
 
-public class SolveContext : DbContext {
+public class SolveContext(DbContextOptions<SolveContext> Options) : DbContext(Options) {
     public DbSet<Solve> Solves { get; set; }
 
-    public string DbPath { get; set; }
-
-    public SolveContext() {
-        var folder = Environment.SpecialFolder.LocalApplicationData;
-        var path = Environment.GetFolderPath(folder);
-
-        DbPath = Path.Combine(path, "cube-timer.db");
-        Console.WriteLine(DbPath);
-    }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder options)
-        => options.UseSqlite($"Data Source={DbPath}");
 }

@@ -19,9 +19,6 @@ public class SolvesController(SolveContext context) : ControllerBase {
         if (penalty == "DNF") {
             solvePenalty = Penalty.DNF;
         }
-        else if (penalty == "DNS") {
-            solvePenalty = Penalty.DNS;
-        }
         else if (penalty == "Plus2") {
             solvePenalty = Penalty.Plus2;
         }
