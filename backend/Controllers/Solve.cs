@@ -25,7 +25,6 @@ public class Solve {
     }
 }
 
-public class SolveContext(DbContextOptions<SolveContext> Options) : DbContext(Options) {
+public class SolveContext(DbContextOptions<SolveContext> options) : DbContext(options) {
     public DbSet<Solve> Solves { get; set; }
-
 }

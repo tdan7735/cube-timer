@@ -11,13 +11,19 @@ builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 
 // Add database support
+var connectionString = builder.Configuration.GetValue<string>("Db:DefaultConnection");
+if (connectionString == null) {
+    Console.WriteLine("No connection string found");
+    return;
+}
+
+Console.WriteLine("Connection string found");
+
 builder.Services.AddDbContext<SolveContext>(options => {
-    options.UseNpgsql(builder.Configuration.GetValue<string>("Db:ConnectionString"));
+    options.UseNpgsql(connectionString);
 });
 
 var app = builder.Build();
-
-var ConnectionString = app.Configuration.GetValue<string>("Db:ConnectionString");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment()) {
@@ -30,5 +36,4 @@ app.UseHttpsRedirection();
 app.MapControllers();
 
 Console.WriteLine("Starting server...");
-Console.WriteLine("Connection String: " + ConnectionString);
 app.Run();
