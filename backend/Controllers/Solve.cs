@@ -1,5 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-
 namespace backend.Controllers;
 
 public enum Penalty {
@@ -23,8 +21,4 @@ public class Solve {
             return SolveTime;
         }
     }
-}
-
-public class SolveContext(DbContextOptions<SolveContext> options) : DbContext(options) {
-    public DbSet<Solve> Solves { get; set; }
 }
