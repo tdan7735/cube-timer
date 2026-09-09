@@ -1,3 +1,5 @@
+using backend.Data;
+using backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -39,6 +41,7 @@ public class SolvesController(SolveContext context) : ControllerBase {
             SolveTime = solveTime,
             TimeSolved = DateTime.UtcNow,
         };
+        
         context.Solves.Add(solve);
         await context.SaveChangesAsync();
         return Ok();

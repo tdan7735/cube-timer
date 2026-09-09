@@ -1,6 +1,6 @@
 namespace backend.Data;
 
-using backend.Controllers;
+using backend.Models;
 using Microsoft.EntityFrameworkCore;
 
 public class SolveContext(DbContextOptions<SolveContext> options) : DbContext(options) {

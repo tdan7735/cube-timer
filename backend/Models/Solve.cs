@@ -1,4 +1,4 @@
-namespace backend.Controllers;
+namespace backend.Models;
 
 public enum Penalty {
     None,
