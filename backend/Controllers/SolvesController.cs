@@ -14,7 +14,10 @@ public class SolvesController(SolveContext context) : ControllerBase {
     }
 
     [HttpPost]
-    public async Task<IActionResult> PostSolve(string scramble, string penalty, int solveTime) {
+    public async Task<IActionResult> PostSolve(
+            [FromForm] string scramble,
+            [FromForm] string penalty,
+            [FromForm] int solveTime) {
         Penalty solvePenalty;
         if (penalty == "DNF") {
             solvePenalty = Penalty.DNF;
@@ -34,7 +37,7 @@ public class SolvesController(SolveContext context) : ControllerBase {
             Scramble = scramble,
             Penalty = solvePenalty,
             SolveTime = solveTime,
-            TimeSolved = DateTime.Now,
+            TimeSolved = DateTime.UtcNow,
         };
         context.Solves.Add(solve);
         await context.SaveChangesAsync();

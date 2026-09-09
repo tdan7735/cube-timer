@@ -3,9 +3,9 @@ using Microsoft.EntityFrameworkCore;
 namespace backend.Controllers;
 
 public enum Penalty {
-    DNF,
-    Plus2,
     None,
+    Plus2,
+    DNF,
 }
 
 public class Solve {
