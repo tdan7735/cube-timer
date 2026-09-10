@@ -16,10 +16,11 @@ public class SolvesController(SolveContext context) : ControllerBase {
     }
 
     [HttpPost]
-    public async Task<IActionResult> PostSolve(
-            [FromForm] string scramble,
-            [FromForm] string penalty,
-            [FromForm] int solveTime) {
+    public async Task<IActionResult> PostSolve([FromBody] PostSolveRequest req) {
+        string scramble = req.Scramble;
+        string penalty = req.Penalty;
+        int solveTime = req.SolveTime;
+
         Penalty solvePenalty;
         if (penalty == "DNF") {
             solvePenalty = Penalty.DNF;
@@ -35,15 +36,32 @@ public class SolvesController(SolveContext context) : ControllerBase {
             return BadRequest();
         }
 
+        if (scramble.Length == 0) {
+            Console.WriteLine("Scramble cannot be an empty string");
+            return BadRequest();
+        }
+
+        if (solveTime < 0) {
+            Console.WriteLine("Scramble cannot be negative");
+            return BadRequest();
+        }
+
         var solve = new Solve {
             Scramble = scramble,
             Penalty = solvePenalty,
             SolveTime = solveTime,
             TimeSolved = DateTime.UtcNow,
         };
-        
+
         context.Solves.Add(solve);
         await context.SaveChangesAsync();
-        return Ok();
+
+        return CreatedAtAction(nameof(PostSolve), new { solve.Id }, solve);
     }
+}
+
+public class PostSolveRequest {
+    public string Scramble { get; set; } = "";
+    public string Penalty { get; set; } = "";
+    public int SolveTime { get; set; }
 }
