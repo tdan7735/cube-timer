@@ -32,23 +32,8 @@ public class SolvesController(SolveContext context) : ControllerBase {
     [HttpPost]
     public async Task<IActionResult> PostSolve([FromBody] PostSolveRequest req) {
         string scramble = req.Scramble;
-        string penalty = req.Penalty;
+        Penalty penalty = req.Penalty;
         int solveTime = req.SolveTime;
-
-        Penalty solvePenalty;
-        if (penalty == "DNF") {
-            solvePenalty = Penalty.DNF;
-        }
-        else if (penalty == "Plus2") {
-            solvePenalty = Penalty.Plus2;
-        }
-        else if (penalty == "None") {
-            solvePenalty = Penalty.None;
-        }
-        else {
-            Console.WriteLine("Invalid penalty");
-            return BadRequest();
-        }
 
         if (scramble.Length == 0) {
             Console.WriteLine("Scramble cannot be an empty string");
@@ -62,7 +47,7 @@ public class SolvesController(SolveContext context) : ControllerBase {
 
         var solve = new Solve {
             Scramble = scramble,
-            Penalty = solvePenalty,
+            Penalty = penalty,
             SolveTime = solveTime,
             TimeSolved = DateTime.UtcNow,
         };
@@ -95,7 +80,7 @@ public class SolvesController(SolveContext context) : ControllerBase {
 }
 
 public class PostSolveRequest {
-    public string Scramble { get; set; } = "";
-    public string Penalty { get; set; } = "";
-    public int SolveTime { get; set; }
+    public required string Scramble { get; set; } = "";
+    public required Penalty Penalty { get; set; }
+    public required int SolveTime { get; set; }
 }
