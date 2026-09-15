@@ -11,8 +11,22 @@ public class SolvesController(SolveContext context) : ControllerBase {
 
     [HttpGet]
     public async Task<IActionResult> GetSolves() {
-        var solves = await context.Solves.ToListAsync();
+        var solves = await context.Solves
+            .OrderByDescending(s => s.TimeSolved)
+            .ToListAsync();
+
         return Ok(solves);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetSolves([FromRoute] int id) {
+        var solve = await context.Solves.FindAsync(id);
+
+        if (solve == null) {
+            return NotFound();
+        }
+
+        return Ok(solve);
     }
 
     [HttpPost]
@@ -42,7 +56,7 @@ public class SolvesController(SolveContext context) : ControllerBase {
         }
 
         if (solveTime < 0) {
-            Console.WriteLine("Scramble cannot be negative");
+            Console.WriteLine("Solve time cannot be negative");
             return BadRequest();
         }
 
