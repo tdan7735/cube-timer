@@ -72,6 +72,26 @@ public class SolvesController(SolveContext context) : ControllerBase {
 
         return CreatedAtAction(nameof(PostSolve), new { solve.Id }, solve);
     }
+
+    [HttpDelete]
+    public async Task<IActionResult> DeleteAllSolves() {
+        context.Solves.RemoveRange(context.Solves);
+        await context.SaveChangesAsync();
+        return Ok();
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteSolve([FromRoute] int id) {
+        var solve = await context.Solves.FindAsync(id);
+
+        if (solve == null) {
+            return NotFound();
+        }
+
+        context.Solves.Remove(solve);
+        await context.SaveChangesAsync();
+        return Ok();
+    }
 }
 
 public class PostSolveRequest {
