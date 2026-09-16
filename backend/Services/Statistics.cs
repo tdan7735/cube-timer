@@ -99,6 +99,14 @@ public class Statistics {
     }
 
     /**
+     * Returns the fastest solve time
+    */
+    public double GetPersonalBest(List<Solve> solves) {
+        var sortedSolves = SortSolves(solves);
+        return sortedSolves[0].FinalTime();
+    }
+
+    /**
      * Helper function for Ao calculations
      * Calculates the average of the solve times for the most recent num solves
      * 5% of the slowest and fastest times are removed
