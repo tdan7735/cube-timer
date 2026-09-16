@@ -6,7 +6,7 @@ namespace backend.Services;
  * return value of -1 means DNF
  * return value of -2 means uncalculable
 */
-public class Statistics {
+public class StatisticsService {
 
     /**
      * Calculates the average of all solve times.
@@ -14,12 +14,17 @@ public class Statistics {
     */
     public double CalculateTotalAverage(List<Solve> solves) {
         double sum = 0;
+        int numDnf = 0;
         foreach (var solve in solves) {
             if (solve.Penalty != Penalty.DNF) {
                 sum += solve.FinalTime();
             }
+            else {
+                numDnf++;
+            }
         }
-        return sum / solves.Count;
+
+        return sum / (solves.Count - numDnf);
     }
 
     /**
@@ -28,11 +33,10 @@ public class Statistics {
      * If there are more than 2 solves with a DNF penalty, the ao5 is DNF.
     */
     public double CalculateAo5(List<Solve> solves) {
-        var recentSolves = solves.OrderByDescending(s => s.TimeSolved).Take(5).ToList();
-
-        if (recentSolves == null || recentSolves.Count == 0) {
-            return -2;
-        }
+        var recentSolves = solves
+            .OrderByDescending(s => s.TimeSolved)
+            .Take(5)
+            .ToList();
 
         if (recentSolves.Count < 5) {
             return -2;
@@ -47,11 +51,10 @@ public class Statistics {
      * If there are more than 2 solves with a DNF penalty, the ao12 is DNF.
     */
     public double CalculateAo12(List<Solve> solves) {
-        var recentSolves = solves.OrderByDescending(s => s.TimeSolved).Take(12).ToList();
-
-        if (recentSolves == null || recentSolves.Count == 0) {
-            return -2;
-        }
+        var recentSolves = solves
+           .OrderByDescending(s => s.TimeSolved)
+           .Take(12)
+           .ToList();
 
         if (recentSolves.Count < 12) {
             return -2;
@@ -66,11 +69,10 @@ public class Statistics {
      * If there are more than 3 solves with a DNF penalty, the ao50 is DNF.
     */
     public double CalculateAo50(List<Solve> solves) {
-        var recentSolves = solves.OrderByDescending(s => s.TimeSolved).Take(50).ToList();
-
-        if (recentSolves == null || recentSolves.Count == 0) {
-            return -2;
-        }
+        var recentSolves = solves
+            .OrderByDescending(s => s.TimeSolved)
+            .Take(50)
+            .ToList();
 
         if (recentSolves.Count < 50) {
             return -2;
@@ -85,11 +87,9 @@ public class Statistics {
      * If there are more than 5 solves with a DNF penalty, the ao100 is DNF.
     */
     public double CalculateAo100(List<Solve> solves) {
-        var recentSolves = solves.OrderByDescending(s => s.TimeSolved).Take(100).ToList();
-
-        if (recentSolves == null || recentSolves.Count == 0) {
-            return -2;
-        }
+        var recentSolves = solves.OrderByDescending(s => s.TimeSolved)
+            .Take(100)
+            .ToList();
 
         if (recentSolves.Count < 100) {
             return -2;
@@ -101,8 +101,13 @@ public class Statistics {
     /**
      * Returns the fastest solve time
     */
-    public double GetPersonalBest(List<Solve> solves) {
+    public double? GetPersonalBest(List<Solve> solves) {
         var sortedSolves = SortSolves(solves);
+
+        if (sortedSolves.Count == 0) {
+            return null;
+        }
+
         return sortedSolves[0].FinalTime();
     }
 
