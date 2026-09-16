@@ -1,5 +1,6 @@
 using backend.Data;
 using backend.Models;
+using backend.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +8,7 @@ namespace backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class SolvesController(SolveContext context) : ControllerBase {
+public class SolvesController(SolveContext context, StatisticsService statistics) : ControllerBase {
 
     [HttpGet]
     public async Task<IActionResult> GetSolves() {
@@ -19,7 +20,7 @@ public class SolvesController(SolveContext context) : ControllerBase {
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetSolves([FromRoute] int id) {
+    public async Task<IActionResult> GetSolve([FromRoute] int id) {
         var solve = await context.Solves.FindAsync(id);
 
         if (solve == null) {
@@ -55,7 +56,7 @@ public class SolvesController(SolveContext context) : ControllerBase {
         context.Solves.Add(solve);
         await context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(PostSolve), new { solve.Id }, solve);
+        return Created(nameof(GetSolve), solve);
     }
 
     [HttpDelete]
@@ -77,10 +78,35 @@ public class SolvesController(SolveContext context) : ControllerBase {
         await context.SaveChangesAsync();
         return Ok();
     }
+
+    [HttpGet("statistics")]
+    public async Task<IActionResult> GetStatistics() {
+        var solves = await context.Solves.ToListAsync();
+
+        var response = new StatisticsResponse {
+            TotalAverage = statistics.CalculateTotalAverage(solves),
+            Ao5 = statistics.CalculateAo5(solves),
+            Ao12 = statistics.CalculateAo12(solves),
+            Ao50 = statistics.CalculateAo50(solves),
+            Ao100 = statistics.CalculateAo100(solves),
+            PersonalBest = statistics.GetPersonalBest(solves),
+        };
+
+        return Ok(response);
+    }
 }
 
 public class PostSolveRequest {
     public required string Scramble { get; set; } = "";
     public required Penalty Penalty { get; set; }
     public required int SolveTime { get; set; }
+}
+
+public class StatisticsResponse {
+    public double? TotalAverage { get; set; }
+    public double? Ao5 { get; set; }
+    public double? Ao12 { get; set; }
+    public double? Ao50 { get; set; }
+    public double? Ao100 { get; set; }
+    public double? PersonalBest { get; set; }
 }

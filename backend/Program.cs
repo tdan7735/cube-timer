@@ -1,5 +1,6 @@
 using backend.Data;
 using Microsoft.EntityFrameworkCore;
+using backend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +10,7 @@ builder.Services.AddOpenApi();
 
 // Add controller support
 builder.Services.AddControllers();
+builder.Services.AddScoped<StatisticsService>();
 
 // Add database support
 var connectionString = builder.Configuration.GetValue<string>("Db:DefaultConnection");

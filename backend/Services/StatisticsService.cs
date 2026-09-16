@@ -2,17 +2,17 @@ using backend.Models;
 
 namespace backend.Services;
 
-/**
- * return value of -1 means DNF
- * return value of -2 means uncalculable
-*/
 public class StatisticsService {
 
     /**
      * Calculates the average of all solve times.
      * Solves with a DNF penalty are ignored.
     */
-    public double CalculateTotalAverage(List<Solve> solves) {
+    public double? CalculateTotalAverage(List<Solve> solves) {
+        if (solves.Count == 0) {
+            return null;
+        }
+
         double sum = 0;
         int numDnf = 0;
         foreach (var solve in solves) {
@@ -32,14 +32,14 @@ public class StatisticsService {
      * The fastest and slowest solves are ignored.
      * If there are more than 2 solves with a DNF penalty, the ao5 is DNF.
     */
-    public double CalculateAo5(List<Solve> solves) {
+    public double? CalculateAo5(List<Solve> solves) {
         var recentSolves = solves
             .OrderByDescending(s => s.TimeSolved)
             .Take(5)
             .ToList();
 
         if (recentSolves.Count < 5) {
-            return -2;
+            return null;
         }
 
         return AoHelper(recentSolves, 5);
@@ -50,14 +50,14 @@ public class StatisticsService {
      * The fastest and slowest solves are ignored.
      * If there are more than 2 solves with a DNF penalty, the ao12 is DNF.
     */
-    public double CalculateAo12(List<Solve> solves) {
+    public double? CalculateAo12(List<Solve> solves) {
         var recentSolves = solves
            .OrderByDescending(s => s.TimeSolved)
            .Take(12)
            .ToList();
 
         if (recentSolves.Count < 12) {
-            return -2;
+            return null;
         }
 
         return AoHelper(recentSolves, 12);
@@ -68,14 +68,14 @@ public class StatisticsService {
      * The fastest and slowest 3 solves are ignored
      * If there are more than 3 solves with a DNF penalty, the ao50 is DNF.
     */
-    public double CalculateAo50(List<Solve> solves) {
+    public double? CalculateAo50(List<Solve> solves) {
         var recentSolves = solves
             .OrderByDescending(s => s.TimeSolved)
             .Take(50)
             .ToList();
 
         if (recentSolves.Count < 50) {
-            return -2;
+            return null;
         }
 
         return AoHelper(recentSolves, 50);
@@ -86,13 +86,13 @@ public class StatisticsService {
      * The fastest and slowest 5 solves are ignored
      * If there are more than 5 solves with a DNF penalty, the ao100 is DNF.
     */
-    public double CalculateAo100(List<Solve> solves) {
+    public double? CalculateAo100(List<Solve> solves) {
         var recentSolves = solves.OrderByDescending(s => s.TimeSolved)
             .Take(100)
             .ToList();
 
         if (recentSolves.Count < 100) {
-            return -2;
+            return null;
         }
 
         return AoHelper(recentSolves, 100);
