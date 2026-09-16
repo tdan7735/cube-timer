@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { formatTime } from '../lib/format';
+import { Penalty } from '../lib/types';
 
 export type Phase = 'idle' | 'ready' | 'running';
 
 interface TimerProps {
-  onSolve: (timeMs: number) => void;
+  onSolve: (timeMs: number, penalty: Penalty) => void;
   onPhaseChange: (phase: Phase) => void;
 }
 
@@ -27,19 +28,29 @@ export function Timer({ onSolve, onPhaseChange }: TimerProps) {
       raf.current = requestAnimationFrame(tick);
     }
 
+    function stop(penalty: Penalty) {
+      cancelAnimationFrame(raf.current);
+      const finalTime = Date.now() - startTime.current;
+      setElapsed(finalTime);
+      onSolveRef.current(finalTime, penalty);
+      phaseRef.current = 'idle';
+      setPhase('idle');
+      onPhaseChangeRef.current('idle');
+    }
+
     function onKeyDown(e: KeyboardEvent) {
+      if (e.code === 'Escape' && phaseRef.current === 'running') {
+        e.preventDefault();
+        stop(Penalty.DNF);
+        return;
+      }
+
       if (e.code !== 'Space') return;
       e.preventDefault();
 
       const p = phaseRef.current;
       if (p === 'running') {
-        cancelAnimationFrame(raf.current);
-        const finalTime = Date.now() - startTime.current;
-        setElapsed(finalTime);
-        onSolveRef.current(finalTime);
-        phaseRef.current = 'idle';
-        setPhase('idle');
-        onPhaseChangeRef.current('idle');
+        stop(Penalty.None);
       } else if (p === 'idle') {
         phaseRef.current = 'ready';
         setPhase('ready');
@@ -82,7 +93,7 @@ export function Timer({ onSolve, onPhaseChange }: TimerProps) {
       <div className="timer-hint">
         {phase === 'idle' && 'hold space'}
         {phase === 'ready' && 'release to start'}
-        {phase === 'running' && 'press space to stop'}
+        {phase === 'running' && 'press space to stop · esc for dnf'}
       </div>
     </div>
   );

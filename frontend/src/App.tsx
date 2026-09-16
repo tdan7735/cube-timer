@@ -24,19 +24,19 @@ function App() {
     refresh();
   }, [refresh]);
 
-  const handleSolve = async (timeMs: number) => {
+  const handleSolve = async (timeMs: number, penalty: Penalty) => {
     const tempId = Date.now();
     const optimistic: Solve = {
       id: tempId,
       scramble: SCRAMBLE,
-      penalty: Penalty.None,
+      penalty,
       solveTime: timeMs,
       timeSolved: new Date().toISOString(),
     };
     setSolves((prev) => [optimistic, ...prev]);
 
     try {
-      const saved = await createSolve({ scramble: SCRAMBLE, penalty: Penalty.None, solveTime: timeMs });
+      const saved = await createSolve({ scramble: SCRAMBLE, penalty, solveTime: timeMs });
       setSolves((prev) => prev.map((s) => (s.id === tempId ? saved : s)));
       refresh();
     } catch {
