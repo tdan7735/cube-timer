@@ -2,6 +2,9 @@ using backend.Models;
 
 namespace backend.Services;
 
+/*
+ * -1 implies DNF
+*/
 public class StatisticsService {
 
     /**
