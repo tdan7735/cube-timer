@@ -59,6 +59,23 @@ public class SolvesController(SolveContext context, StatisticsService statistics
         return Created(nameof(GetSolve), solve);
     }
 
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateSolve([FromRoute] int id, [FromBody] PostSolveRequest req) {
+        var solve = await context.Solves.FindAsync(id);
+
+        if (solve == null) {
+            return NotFound();
+        }
+
+        solve.Scramble = req.Scramble;
+        solve.Penalty = req.Penalty;
+        solve.SolveTime = req.SolveTime;
+        solve.TimeSolved = DateTime.UtcNow;
+
+        await context.SaveChangesAsync();
+        return Ok();
+    }
+
     [HttpDelete]
     public async Task<IActionResult> DeleteAllSolves() {
         context.Solves.RemoveRange(context.Solves);
