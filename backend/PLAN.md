@@ -1,4 +1,3 @@
-
 # 🧩 Project: CubeLab
 
 I'd frame the project as something like:

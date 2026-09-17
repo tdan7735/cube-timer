@@ -1,14 +1,14 @@
-import type { Solve, Statistics, PostSolveRequest } from './types';
+import type { Solve, Statistics, PostSolveRequest } from "./types";
 
-const BASE = '/api/solves';
+const BASE = "/api/solves";
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: { "Content-Type": "application/json" },
     ...init,
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  if (res.status === 204 || res.headers.get('content-length') === '0') {
+  if (res.status === 204 || res.headers.get("content-length") === "0") {
     return undefined as T;
   }
   return res.json();
@@ -24,15 +24,15 @@ export function getStatistics(): Promise<Statistics> {
 
 export function createSolve(data: PostSolveRequest): Promise<Solve> {
   return request<Solve>(BASE, {
-    method: 'POST',
+    method: "POST",
     body: JSON.stringify(data),
   });
 }
 
 export function deleteSolve(id: number): Promise<void> {
-  return request<void>(`${BASE}/${id}`, { method: 'DELETE' });
+  return request<void>(`${BASE}/${id}`, { method: "DELETE" });
 }
 
 export function deleteAllSolves(): Promise<void> {
-  return request<void>(BASE, { method: 'DELETE' });
+  return request<void>(BASE, { method: "DELETE" });
 }

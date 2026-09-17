@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
-import { formatTime } from '../lib/format';
-import { Penalty } from '../lib/types';
+"use client";
 
-export type Phase = 'idle' | 'ready' | 'running';
+import { useState, useEffect, useRef } from "react";
+import { formatTime } from "../lib/format";
+import { Penalty } from "../lib/types";
+
+export type Phase = "idle" | "ready" | "running";
 
 interface TimerProps {
   onSolve: (timeMs: number, penalty: Penalty) => void;
@@ -10,10 +12,10 @@ interface TimerProps {
 }
 
 export function Timer({ onSolve, onPhaseChange }: TimerProps) {
-  const [phase, setPhase] = useState<Phase>('idle');
+  const [phase, setPhase] = useState<Phase>("idle");
   const [elapsed, setElapsed] = useState(0);
 
-  const phaseRef = useRef<Phase>('idle');
+  const phaseRef = useRef<Phase>("idle");
   const startTime = useRef(0);
   const raf = useRef(0);
   const onSolveRef = useRef(onSolve);
@@ -33,57 +35,61 @@ export function Timer({ onSolve, onPhaseChange }: TimerProps) {
       const finalTime = Date.now() - startTime.current;
       setElapsed(finalTime);
       onSolveRef.current(finalTime, penalty);
-      phaseRef.current = 'idle';
-      setPhase('idle');
-      onPhaseChangeRef.current('idle');
+      phaseRef.current = "idle";
+      setPhase("idle");
+      onPhaseChangeRef.current("idle");
     }
 
     function onKeyDown(e: KeyboardEvent) {
-      if (e.code === 'Escape' && phaseRef.current === 'running') {
+      if (e.code === "Escape" && phaseRef.current === "running") {
         e.preventDefault();
         stop(Penalty.DNF);
         return;
       }
 
-      if (e.code !== 'Space') return;
+      if (e.code !== "Space") return;
       e.preventDefault();
 
       const p = phaseRef.current;
-      if (p === 'running') {
+      if (p === "running") {
         stop(Penalty.None);
-      } else if (p === 'idle') {
-        phaseRef.current = 'ready';
-        setPhase('ready');
-        onPhaseChangeRef.current('ready');
+      } else if (p === "idle") {
+        phaseRef.current = "ready";
+        setPhase("ready");
+        onPhaseChangeRef.current("ready");
       }
     }
 
     function onKeyUp(e: KeyboardEvent) {
-      if (e.code !== 'Space') return;
+      if (e.code !== "Space") return;
       e.preventDefault();
 
       const p = phaseRef.current;
-      if (p === 'ready') {
+      if (p === "ready") {
         startTime.current = Date.now();
         setElapsed(0);
         raf.current = requestAnimationFrame(tick);
-        phaseRef.current = 'running';
-        setPhase('running');
-        onPhaseChangeRef.current('running');
+        phaseRef.current = "running";
+        setPhase("running");
+        onPhaseChangeRef.current("running");
       }
     }
 
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
     return () => {
-      window.removeEventListener('keydown', onKeyDown);
-      window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
       cancelAnimationFrame(raf.current);
     };
   }, []);
 
   const colour =
-    phase === 'ready' ? 'var(--green)' : phase === 'running' ? 'var(--text)' : 'var(--text-dim)';
+    phase === "ready"
+      ? "var(--green)"
+      : phase === "running"
+        ? "var(--text)"
+        : "var(--text-dim)";
 
   return (
     <div className="timer-wrap">
@@ -91,9 +97,9 @@ export function Timer({ onSolve, onPhaseChange }: TimerProps) {
         {formatTime(elapsed)}
       </div>
       <div className="timer-hint">
-        {phase === 'idle' && 'hold space'}
-        {phase === 'ready' && 'release to start'}
-        {phase === 'running' && 'press space to stop · esc for dnf'}
+        {phase === "idle" && "hold space"}
+        {phase === "ready" && "release to start"}
+        {phase === "running" && "press space to stop · esc for dnf"}
       </div>
     </div>
   );

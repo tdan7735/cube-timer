@@ -1,5 +1,7 @@
-import { type Solve, Penalty, finalTime } from '../lib/types';
-import { formatTime } from '../lib/format';
+"use client";
+
+import { type Solve, Penalty, finalTime } from "../lib/types";
+import { formatTime } from "../lib/format";
 
 interface SolveListProps {
   solves: Solve[];
@@ -22,7 +24,11 @@ export function SolveList({ solves, onDelete }: SolveListProps) {
           {s.penalty === Penalty.DNF && (
             <span className="solve-penalty dnf">DNF</span>
           )}
-          <button className="solve-delete" onClick={() => onDelete(s.id)} title="Delete">
+          <button
+            className="solve-delete"
+            onClick={() => onDelete(s.id)}
+            title="Delete"
+          >
             ×
           </button>
         </div>

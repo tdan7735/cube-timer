@@ -1,18 +1,20 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Timer } from './components/Timer';
-import { Stats } from './components/Stats';
-import { SolveList } from './components/SolveList';
-import { getSolves, getStatistics, createSolve, deleteSolve } from './lib/api';
-import type { Solve, Statistics } from './lib/types';
-import type { Phase } from './components/Timer';
-import { Penalty } from './lib/types';
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { Timer } from "../components/Timer";
+import { Stats } from "../components/Stats";
+import { SolveList } from "../components/SolveList";
+import { getSolves, getStatistics, createSolve, deleteSolve } from "../lib/api";
+import type { Solve, Statistics } from "../lib/types";
+import type { Phase } from "../components/Timer";
+import { Penalty } from "../lib/types";
 
 const SCRAMBLE = "R U R' U' R' F R2 U' R' U' R U R' F'";
 
-function App() {
+export default function Home() {
   const [solves, setSolves] = useState<Solve[]>([]);
   const [stats, setStats] = useState<Statistics | null>(null);
-  const [phase, setPhase] = useState<Phase>('idle');
+  const [phase, setPhase] = useState<Phase>("idle");
 
   const refresh = useCallback(async () => {
     const [s, st] = await Promise.all([getSolves(), getStatistics()]);
@@ -36,8 +38,14 @@ function App() {
     setSolves((prev) => [optimistic, ...prev]);
 
     try {
-      const saved = await createSolve({ scramble: SCRAMBLE, penalty, solveTime: timeMs });
-      setSolves((prev) => prev.map((s) => (s.id === tempId ? saved : s)));
+      const saved = await createSolve({
+        scramble: SCRAMBLE,
+        penalty,
+        solveTime: timeMs,
+      });
+      setSolves((prev) =>
+        prev.map((s) => (s.id === tempId ? saved : s))
+      );
       refresh();
     } catch {
       setSolves((prev) => prev.filter((s) => s.id !== tempId));
@@ -54,7 +62,7 @@ function App() {
     }
   };
 
-  const timing = phase !== 'idle';
+  const timing = phase !== "idle";
 
   return (
     <div className="app">
@@ -72,5 +80,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
