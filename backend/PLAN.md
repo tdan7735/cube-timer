@@ -556,8 +556,6 @@ Your existing capstone already has authentication and role-based access experien
 
 # 12. Add proper testing
 
-This is **very important for the John Holland application**.
-
 I'd aim for:
 
 ### Unit tests
@@ -702,8 +700,6 @@ Now your project starts looking like something you'd encounter in a professional
 ---
 
 # 16. Eventually deploy it
-
-I'd use Azure because of the John Holland job.
 
 Potential architecture:
 
