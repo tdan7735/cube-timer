@@ -46,7 +46,9 @@ export default function Home() {
       setSolves((prev) =>
         prev.map((s) => (s.id === tempId ? saved : s))
       );
-      refresh();
+
+      const updatedStats = await getStatistics();
+      setStats(updatedStats);
     } catch {
       setSolves((prev) => prev.filter((s) => s.id !== tempId));
     }
@@ -56,9 +58,9 @@ export default function Home() {
     setSolves((prev) => prev.filter((s) => s.id !== id));
     try {
       await deleteSolve(id);
-      refresh();
+      await refresh();
     } catch {
-      refresh();
+      await refresh();
     }
   };
 
