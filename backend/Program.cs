@@ -8,9 +8,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-// Add controller support
+// Services
 builder.Services.AddControllers();
 builder.Services.AddScoped<StatisticsService>();
+builder.Services.AddScoped<ScrambleService>();
 
 // Add database support
 var connectionString = builder.Configuration.GetValue<string>("Db:DefaultConnection");

@@ -728,114 +728,143 @@ That's an **excellent junior .NET developer story**.
 
 Don't attempt all of this at once.
 
-### 🟢 Phase 1 — .NET fundamentals
+## Progress tracker
+
+Use this section as the main project checklist. Mark items with `[x]` as you finish them, and leave `[ ]` for work that is still planned.
+
+### ✅ Phase 1 — .NET fundamentals
 
 **Goal:** get a basic API running.
 
 Learn:
 
-* C#
-* ASP.NET Core
-* controllers
-* routing
-* dependency injection
-* DTOs
+* [x] C#
+* [x] ASP.NET Core
+* [x] controllers
+* [x] routing
+* [x] dependency injection
+* [x] DTO/request models
 
 Build:
 
-```text
-GET /api/solves
-POST /api/solves
-```
+* [x] `GET /api/solves`
+* [x] `GET /api/solves/{id}`
+* [x] `POST /api/solves`
+* [x] `PUT /api/solves/{id}`
+* [x] `DELETE /api/solves/{id}`
+* [x] `DELETE /api/solves`
+* [x] `GET /api/solves/statistics`
 
 ---
 
-### 🟢 Phase 2 — Database
+### 🟡 Phase 2 — Database
 
 Learn:
 
-* EF Core
-* SQL Server
-* migrations
-* relationships
-* LINQ
+* [x] EF Core
+* [ ] SQL Server
+* [x] migrations
+* [ ] relationships
+* [x] LINQ
 
 Build:
 
-```text
-User
-Session
-Solve
-```
+* [ ] User
+* [ ] Session
+* [x] Solve
+* [x] Solve persistence through EF Core
+* [x] Non-negative solve time database constraint
+
+Note: the current implementation uses PostgreSQL via `UseNpgsql`, even though the original plan recommended SQL Server for stronger Microsoft/.NET portfolio alignment.
 
 ---
 
-### 🟢 Phase 3 — Frontend
+### 🟡 Phase 3 — Frontend
 
 React + TypeScript.
 
 Build:
 
-* solve entry
-* solve history
-* statistics
-* charts
+* [x] solve entry
+* [x] timer flow
+* [x] solve history
+* [x] statistics display
+* [x] delete solve from UI
+* [ ] charts
 
 ---
 
-### 🟢 Phase 4 — Cube functionality
+### 🟡 Phase 4 — Cube functionality
 
 Add:
 
-* scramble generation
-* Ao5
-* Ao12
-* PBs
-* sessions
-* algorithm database
+* [ ] scramble generation
+* [x] Ao5
+* [x] Ao12
+* [x] Ao50
+* [x] Ao100
+* [x] PBs
+* [x] total average
+* [ ] Ao5 history
+* [ ] Ao12 history
+* [ ] rolling averages
+* [ ] best/worst sessions
+* [ ] improvement over time
+* [ ] sessions
+* [ ] algorithm database
 
 ---
 
-### 🟢 Phase 5 — Testing
+### 🟡 Phase 5 — Testing
 
 Add:
 
-* xUnit
-* unit tests
-* integration tests
-* Playwright
+* [x] xUnit
+* [x] unit tests for `Solve.FinalTime()`
+* [x] unit tests for statistics calculations
+* [x] controller tests with EF Core in-memory database
+* [ ] full API integration tests with `WebApplicationFactory`
+* [ ] frontend tests
+* [ ] Playwright
 
 ---
 
-### 🟢 Phase 6 — Security
+### ⚪ Phase 6 — Security
 
 Add:
 
-* authentication
-* JWT
-* authorisation
-* input validation
+* [ ] authentication
+* [ ] JWT
+* [ ] authorisation
+* [x] basic input validation for creating solves
+* [ ] validation for updating solves
+* [ ] consistent validation error responses
 
 ---
 
-### 🟢 Phase 7 — Production engineering
+### ⚪ Phase 7 — Production engineering
 
 Add:
 
-* logging
-* health checks
-* Docker
-* CI/CD
-* Swagger
-* Azure
+* [ ] structured logging
+* [ ] global error handling
+* [ ] health checks
+* [ ] Docker
+* [ ] Docker Compose
+* [ ] CI/CD
+* [x] OpenAPI endpoint in development
+* [ ] Swagger UI / API documentation polish
+* [ ] Azure
 
 ---
 
-### 🟢 Phase 8 — AI
+### ⚪ Phase 8 — AI
 
 Finally:
 
-**Cube Coach**
+* [ ] **Cube Coach**
+* [ ] prepare structured performance data for an LLM
+* [ ] personalised training recommendations
 
 Use your existing AI experience to turn the application into something genuinely personalised.
 
