@@ -3,17 +3,17 @@
 # backend files
 
 # user specific files
-backend/*.suo
-backend/*.user
-backend/*.sln.docstates
+*/*.suo
+*/*.user
+*/*.sln.docstates
 
 # buildd results
-backend/bin/
-backend/obj/
-backend/debug/
-backend/release/
-backend/x64/
+*/bin/
+*/obj/
+*/debug/
+*/release/
+*/x64/
 
 # MSTest test results
-backend/TestResults*/
-backend/BuildLog.*
+*/TestResults*/
+*/BuildLog.*
