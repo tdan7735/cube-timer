@@ -7,7 +7,7 @@ public enum Corner {
 
 public enum Edge {
     UF, UR, UL, UB,
-    DF, DR, DB, DL,
+    DF, DR, DL, DB,
     FL, FR, BL, BR,
 }
 
@@ -27,7 +27,31 @@ public class Cube {
     public Edge[] Edges { get; }
     public int[] EdgeOrientations { get; }
 
-    // Creates a new cube with all its faces and edges set to 0 (solved)
+    // Corner indices
+    private const int UFRIndex = 0;
+    private const int UFLIndex = 1;
+    private const int UBLIndex = 2;
+    private const int UBRIndex = 3;
+    private const int DFRIndex = 4;
+    private const int DFLIndex = 5;
+    private const int DBLIndex = 6;
+    private const int DBRIndex = 7;
+
+    // Edge indices
+    private const int UFIndex = 0;
+    private const int URIndex = 1;
+    private const int ULIndex = 2;
+    private const int UBIndex = 3;
+    private const int DFIndex = 4;
+    private const int DRIndex = 5;
+    private const int DLIndex = 6;
+    private const int DBIndex = 7;
+    private const int FLIndex = 8;
+    private const int FRIndex = 9;
+    private const int BLIndex = 10;
+    private const int BRIndex = 11;
+
+    // Creates a new solved cube
     public Cube() {
         Corners = [
             Corner.UFR, Corner.UFL, Corner.UBL, Corner.UBR,
@@ -37,7 +61,7 @@ public class Cube {
 
         Edges = [
             Edge.UF, Edge.UR, Edge.UL, Edge.UB,
-            Edge.DF, Edge.DR, Edge.DB, Edge.DL,
+            Edge.DF, Edge.DR, Edge.DL, Edge.DB,
             Edge.FL, Edge.FR, Edge.BL, Edge.BR
         ];
         EdgeOrientations = new int[12];
@@ -70,11 +94,40 @@ public class Cube {
                 ApplyU();
                 break;
 
+            case Move.D:
+                ApplyD();
+                break;
+            case Move.D2:
+                ApplyD();
+                ApplyD();
+                break;
+            case Move.DPrime:
+                ApplyD();
+                ApplyD();
+                ApplyD();
+                break;
+
+            case Move.R:
+                ApplyR();
+                break;
+            case Move.R2:
+                ApplyR();
+                ApplyR();
+                break;
+            case Move.RPrime:
+                ApplyR();
+                ApplyR();
+                ApplyR();
+                break;
+
             default:
                 throw new NotImplementedException();
         }
     }
 
+    /**
+     * Returns the state of a cube as a string
+    */
     public override string ToString() {
         return $"""
             Corners: {string.Join(", ", Corners)}
@@ -84,9 +137,62 @@ public class Cube {
         """;
     }
 
+    /**
+     * Apply U Rotation to the cube
+     * Corners:
+     *     UFL -> UBL
+     *     UBL -> UBR
+     *     UBR -> UFR
+     *     UFR -> UFL
+     * Edges:
+     *     UF -> UL
+     *     UL -> UB
+     *     UB -> UR
+     *     UR -> UF
+     * Corner and Edge Orientations are not affected
+    */
     private void ApplyU() {
-        (Corners[0], Corners[1], Corners[2], Corners[3]) = (Corners[1], Corners[2], Corners[3], Corners[0]);
+        (Corners[UFLIndex], Corners[UFRIndex], Corners[UBRIndex], Corners[UBLIndex])
+            = (Corners[UBLIndex], Corners[UFLIndex], Corners[UFRIndex], Corners[UBRIndex]);
 
-        (Edges[0], Edges[1], Edges[2], Edges[3]) = (Edges[1], Edges[2], Edges[3], Edges[0]);
+        (Edges[UFIndex], Edges[URIndex], Edges[UBIndex], Edges[ULIndex])
+            = (Edges[ULIndex], Edges[UFIndex], Edges[URIndex], Edges[UBIndex]);
+    }
+
+    /**
+     * Apply D Rotation to the cube
+     * Corners:
+     *     DFL -> DFR
+     *     DFR -> DBR
+     *     DBR -> DBL
+     *     DBL -> DFL
+     * Edges:
+     *    DF -> DR
+     *    DR -> DB
+     *    DB -> DL
+     *    DL -> DF
+     */
+    private void ApplyD() {
+        (Corners[DFLIndex], Corners[DFRIndex], Corners[DBRIndex], Corners[DBLIndex])
+            = (Corners[DFRIndex], Corners[DBRIndex], Corners[DBLIndex], Corners[DFLIndex]);
+
+        (Edges[DFIndex], Edges[DRIndex], Edges[DBIndex], Edges[DLIndex])
+            = (Edges[DRIndex], Edges[DBIndex], Edges[DLIndex], Edges[DFIndex]);
+    }
+
+    /**
+     * Apply R Rotation to the cube
+     * Corners:
+     * Edges:
+     */
+    private void ApplyR() {
+        // Moving edges and corners
+        (Corners[UFRIndex], Corners[DFRIndex], Corners[DBRIndex], Corners[UBRIndex])
+            = (Corners[UBRIndex], Corners[UFRIndex], Corners[DFRIndex], Corners[DBRIndex]);
+
+        (Edges[FRIndex], Edges[DRIndex], Edges[BRIndex], Edges[URIndex])
+            = (Edges[URIndex], Edges[FRIndex], Edges[DRIndex], Edges[BRIndex]);
+
+        // Orienting edges and corners
     }
 }
