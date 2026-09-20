@@ -20,6 +20,12 @@ public enum Move {
     B, B2, BPrime
 }
 
+/**
+ * RANKING:
+ * TOP/BOTTOM (white/yellow)
+ * FRONT/BACK (green/blue)
+ * LEFT/RIGHT (orange/red)
+ */
 public class Cube {
     public Corner[] Corners { get; }
     public int[] CornerOrientation { get; }
@@ -123,6 +129,41 @@ public class Cube {
             case Move.L:
                 ApplyL();
                 break;
+            case Move.L2:
+                ApplyL();
+                ApplyL();
+                break;
+            case Move.LPrime:
+                ApplyL();
+                ApplyL();
+                ApplyL();
+                break;
+
+            case Move.F:
+                ApplyF();
+                break;
+            case Move.F2:
+                ApplyF();
+                ApplyF();
+                break;
+            case Move.FPrime:
+                ApplyF();
+                ApplyF();
+                ApplyF();
+                break;
+
+            case Move.B:
+                ApplyB();
+                break;
+            case Move.B2:
+                ApplyB();
+                ApplyB();
+                break;
+            case Move.BPrime:
+                ApplyB();
+                ApplyB();
+                ApplyB();
+                break;
 
             default:
                 throw new NotImplementedException();
@@ -143,21 +184,7 @@ public class Cube {
 
     /**
      * Apply U Rotation to the cube
-     * Corners:
-     *     UFL -> UBL
-     *     UBL -> UBR
-     *     UBR -> UFR
-     *     UFR -> UFL
-     * Edges:
-     *     UF -> UL
-     *     UL -> UB
-     *     UB -> UR
-     *     UR -> UF
-     * Corner orientations:
-     *     If orietnation is 0, then it stays 0
-     *     If orientation is 1, then it goes to 2
-     *     If orientation is 2, then it goes to 1
-     * Edge orientations stay the same since the upper edge will still be facing up
+     * Corners and Edges are moved in a clockwise direction relative to the face (from right to left)
     */
     private void ApplyU() {
         (Corners[UFLPosition], Corners[UBLPosition], Corners[UBRPosition], Corners[UFRPosition])
@@ -176,16 +203,7 @@ public class Cube {
     }
     /**
      * Apply D Rotation to the cube
-     * Corners:
-     *     DFL -> DFR
-     *     DFR -> DBR
-     *     DBR -> DBL
-     *     DBL -> DFL
-     * Edges:
-     *    DF -> DR
-     *    DR -> DB
-     *    DB -> DL
-     *    DL -> DF
+     * Corners and Edges are moved in a clockwise direction relative to the face (from left to right)
      */
     private void ApplyD() {
         (Corners[DFRPosition], Corners[DBRPosition], Corners[DBLPosition], Corners[DFLPosition])
@@ -205,8 +223,7 @@ public class Cube {
 
     /**
      * Apply R Rotation to the cube
-     * Corners:
-     * Edges:
+     * Corners and Edges are moved in a clockwise direction relative to the face (from bottom to top)
      */
     private void ApplyR() {
         // Moving edges and corners
@@ -225,6 +242,10 @@ public class Cube {
               );
     }
 
+    /**
+     * Apply L Rotation to the cube
+     * Corners and Edges are moved in a clockwise direction relative to the face (from top to bottom)
+     */
     private void ApplyL() {
         (Corners[UFLPosition], Corners[DFLPosition], Corners[DBLPosition], Corners[UBLPosition]) =
             (Corners[UBLPosition], Corners[UFLPosition], Corners[DFLPosition], Corners[DBLPosition]);
@@ -239,7 +260,54 @@ public class Cube {
                 RotateCornerForFrontOrBackMove(CornerOrientation[DFLPosition]),
                 RotateCornerForFrontOrBackMove(CornerOrientation[DBLPosition])
               );
+    }
 
+    private void ApplyF() {
+        (Corners[UFLPosition], Corners[UFRPosition], Corners[DFRPosition], Corners[DFLPosition])
+            = (Corners[DFLPosition], Corners[UFLPosition], Corners[UFRPosition], Corners[DFRPosition]);
+
+        (Edges[UFPosition], Edges[FRPosition], Edges[DFPosition], Edges[FLPosition])
+            = (Edges[FLPosition], Edges[UFRPosition], Edges[FRPosition], Edges[DFPosition]);
+
+        (CornerOrientation[UFLPosition], CornerOrientation[UFRPosition], CornerOrientation[DFRPosition], CornerOrientation[DFLPosition])
+            = (
+                RotateCornerForFrontOrBackMove(CornerOrientation[DFLPosition]),
+                RotateCornerForFrontOrBackMove(CornerOrientation[UFLPosition]),
+                RotateCornerForFrontOrBackMove(CornerOrientation[UFRPosition]),
+                RotateCornerForFrontOrBackMove(CornerOrientation[DFRPosition])
+              );
+
+        (EdgeOrientation[UFPosition], EdgeOrientation[FRPosition], EdgeOrientation[DFPosition], EdgeOrientation[FLPosition])
+            = (
+                RotateEdgeForFrontOrBackMove(EdgeOrientation[FLPosition]),
+                RotateEdgeForFrontOrBackMove(EdgeOrientation[UFPosition]),
+                RotateEdgeForFrontOrBackMove(EdgeOrientation[FRPosition]),
+                RotateEdgeForFrontOrBackMove(EdgeOrientation[DFPosition])
+              );
+    }
+
+    private void ApplyB() {
+        (Corners[UBLPosition], Corners[DBLPosition], Corners[DBRPosition], Corners[UBRPosition])
+            = (Corners[UBRPosition], Corners[UBLPosition], Corners[DBLPosition], Corners[DBRPosition]);
+
+        (Edges[UBPosition], Edges[BLPosition], Edges[DBPosition], Edges[BRPosition])
+            = (Edges[BRPosition], Edges[UBPosition], Edges[BLPosition], Edges[DBPosition]);
+
+        (CornerOrientation[UBLPosition], CornerOrientation[DBLPosition], CornerOrientation[DBRPosition], CornerOrientation[UBRPosition])
+            = (
+                RotateCornerForFrontOrBackMove(CornerOrientation[UBRPosition]),
+                RotateCornerForFrontOrBackMove(CornerOrientation[UBLPosition]),
+                RotateCornerForFrontOrBackMove(CornerOrientation[DBLPosition]),
+                RotateCornerForFrontOrBackMove(CornerOrientation[DBRPosition])
+              );
+
+        (EdgeOrientation[UBPosition], EdgeOrientation[BLPosition], EdgeOrientation[DBPosition], EdgeOrientation[BRPosition])
+            = (
+                RotateEdgeForFrontOrBackMove(EdgeOrientation[BRPosition]),
+                RotateEdgeForFrontOrBackMove(EdgeOrientation[UBPosition]),
+                RotateEdgeForFrontOrBackMove(EdgeOrientation[BLPosition]),
+                RotateEdgeForFrontOrBackMove(EdgeOrientation[DBPosition])
+              );
     }
 
     private static int RotateCornerForTopOrBottomMove(int orientation) {
