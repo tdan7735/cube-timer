@@ -12,8 +12,8 @@ using backend.Data;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260910075339_AddedSolveTimeConstraint")]
-    partial class AddedSolveTimeConstraint
+    [Migration("20260920145810_AddAlgorithms")]
+    partial class AddAlgorithms
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

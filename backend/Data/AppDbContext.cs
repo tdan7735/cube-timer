@@ -3,7 +3,7 @@ namespace backend.Data;
 using backend.Models;
 using Microsoft.EntityFrameworkCore;
 
-public class SolveContext(DbContextOptions<SolveContext> options) : DbContext(options) {
+public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options) {
     public DbSet<Solve> Solves { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
@@ -15,4 +15,8 @@ public class SolveContext(DbContextOptions<SolveContext> options) : DbContext(op
                     )
             );
     }
+
+    public DbSet<AlgorithmSet> AlgorithmSets { get; set; }        // OLL, PLL, etc.
+    public DbSet<AlgorithmCase> AlgorithmCases { get; set; }      // Aa, Ab, F, etc.
+    public DbSet<Algorithm> Algorithms { get; set; }              // The actual algorithm itself
 }

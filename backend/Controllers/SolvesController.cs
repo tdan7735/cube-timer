@@ -8,7 +8,7 @@ namespace backend.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class SolvesController(SolveContext context, StatisticsService statistics) : ControllerBase {
+public class SolvesController(AppDbContext context, StatisticsService statistics) : ControllerBase {
 
     [HttpGet]
     public async Task<IActionResult> GetSolves() {

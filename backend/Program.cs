@@ -12,6 +12,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 builder.Services.AddScoped<StatisticsService>();
 builder.Services.AddScoped<ScrambleService>();
+builder.Services.AddScoped<AlgorithmService>();
 
 // Add database support
 var connectionString = builder.Configuration.GetValue<string>("Db:DefaultConnection");
@@ -22,11 +23,18 @@ if (connectionString == null) {
 
 Console.WriteLine("Connection string found");
 
-builder.Services.AddDbContext<SolveContext>(options => {
+builder.Services.AddDbContext<AppDbContext>(options => {
     options.UseNpgsql(connectionString);
 });
 
 var app = builder.Build();
+
+// Seed the database
+using (var scope = app.Services.CreateScope()) {
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    await AlgorithmSeeder.SeedAsync(context);
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment()) {
