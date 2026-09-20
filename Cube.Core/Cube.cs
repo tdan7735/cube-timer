@@ -185,6 +185,8 @@ public class Cube {
     /**
      * Apply U Rotation to the cube
      * Corners and Edges are moved in a clockwise direction relative to the face (from right to left)
+     * Corner orientations are rotated
+     * Edge orientations are preserved
     */
     private void ApplyU() {
         (Corners[UFLPosition], Corners[UBLPosition], Corners[UBRPosition], Corners[UFRPosition])
@@ -200,6 +202,9 @@ public class Cube {
                 RotateCornerForTopOrBottomMove(CornerOrientation[UBLPosition]),
                 RotateCornerForTopOrBottomMove(CornerOrientation[UBRPosition])
             );
+
+        (EdgeOrientation[ULPosition], EdgeOrientation[UBPosition], EdgeOrientation[URPosition], EdgeOrientation[UFPosition])
+           = (EdgeOrientation[UFPosition], EdgeOrientation[ULPosition], EdgeOrientation[UBPosition], EdgeOrientation[URPosition]);
     }
     /**
      * Apply D Rotation to the cube
@@ -219,6 +224,9 @@ public class Cube {
                 RotateCornerForTopOrBottomMove(CornerOrientation[DBRPosition]),
                 RotateCornerForTopOrBottomMove(CornerOrientation[DBLPosition])
             );
+
+        (EdgeOrientation[DRPosition], EdgeOrientation[DBPosition], EdgeOrientation[DLPosition], EdgeOrientation[DFPosition])
+            = (EdgeOrientation[DFPosition], EdgeOrientation[DRPosition], EdgeOrientation[DBPosition], EdgeOrientation[DLPosition]);
     }
 
     /**
@@ -240,6 +248,9 @@ public class Cube {
                 RotateCornerForLeftOrRightMove(CornerOrientation[DBRPosition]),
                 RotateCornerForLeftOrRightMove(CornerOrientation[DFRPosition])
               );
+
+        (EdgeOrientation[URPosition], EdgeOrientation[BRPosition], EdgeOrientation[DRPosition], EdgeOrientation[FRPosition])
+                    = (EdgeOrientation[FRPosition], EdgeOrientation[URPosition], EdgeOrientation[BRPosition], EdgeOrientation[DRPosition]);
     }
 
     /**
@@ -255,11 +266,14 @@ public class Cube {
 
         (CornerOrientation[UFLPosition], CornerOrientation[DFLPosition], CornerOrientation[DBLPosition], CornerOrientation[UBLPosition])
             = (
-                RotateCornerForFrontOrBackMove(CornerOrientation[UBLPosition]),
-                RotateCornerForFrontOrBackMove(CornerOrientation[UFLPosition]),
-                RotateCornerForFrontOrBackMove(CornerOrientation[DFLPosition]),
-                RotateCornerForFrontOrBackMove(CornerOrientation[DBLPosition])
+                RotateCornerForLeftOrRightMove(CornerOrientation[UBLPosition]),
+                RotateCornerForLeftOrRightMove(CornerOrientation[UFLPosition]),
+                RotateCornerForLeftOrRightMove(CornerOrientation[DFLPosition]),
+                RotateCornerForLeftOrRightMove(CornerOrientation[DBLPosition])
               );
+
+        (EdgeOrientation[ULPosition], EdgeOrientation[FLPosition], EdgeOrientation[DLPosition], EdgeOrientation[BLPosition]) =
+            (EdgeOrientation[BLPosition], EdgeOrientation[ULPosition], EdgeOrientation[FLPosition], EdgeOrientation[DLPosition]);
     }
 
     private void ApplyF() {
@@ -267,7 +281,7 @@ public class Cube {
             = (Corners[DFLPosition], Corners[UFLPosition], Corners[UFRPosition], Corners[DFRPosition]);
 
         (Edges[UFPosition], Edges[FRPosition], Edges[DFPosition], Edges[FLPosition])
-            = (Edges[FLPosition], Edges[UFRPosition], Edges[FRPosition], Edges[DFPosition]);
+            = (Edges[FLPosition], Edges[UFPosition], Edges[FRPosition], Edges[DFPosition]);
 
         (CornerOrientation[UFLPosition], CornerOrientation[UFRPosition], CornerOrientation[DFRPosition], CornerOrientation[DFLPosition])
             = (
