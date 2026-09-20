@@ -153,7 +153,6 @@ public class Cube {
      *     UL -> UB
      *     UB -> UR
      *     UR -> UF
-     * Corner and Edge Orientations are not affected
     */
     private void ApplyU() {
         (Corners[UFLIndex], Corners[UBLIndex], Corners[UBRIndex], Corners[UFRIndex])
@@ -193,8 +192,8 @@ public class Cube {
         (Corners[UBRIndex], Corners[DBRIndex], Corners[DFRIndex], Corners[UFRIndex])
             = (Corners[UFRIndex], Corners[UBRIndex], Corners[DBRIndex], Corners[DFRIndex]);
 
-        (Edges[BRIndex], Edges[URIndex], Edges[FRIndex], Edges[DRIndex])
-            = (Edges[URIndex], Edges[FRIndex], Edges[DRIndex], Edges[BRIndex]);
+        (Edges[URIndex], Edges[BRIndex], Edges[DRIndex], Edges[FRIndex])
+            = (Edges[FRIndex], Edges[URIndex], Edges[BRIndex], Edges[DRIndex]);
 
         // Orienting corners
         (CornerOrientation[UBRIndex], CornerOrientation[DBRIndex], CornerOrientation[DFRIndex], CornerOrientation[UFRIndex])
