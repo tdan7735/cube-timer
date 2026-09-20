@@ -22,10 +22,10 @@ public enum Move {
 
 public class Cube {
     public Corner[] Corners { get; }
-    public int[] CornerOrientations { get; }
+    public int[] CornerOrientation { get; }
 
     public Edge[] Edges { get; }
-    public int[] EdgeOrientations { get; }
+    public int[] EdgeOrientation { get; }
 
     // Corner indices
     private const int UFRIndex = 0;
@@ -57,23 +57,23 @@ public class Cube {
             Corner.UFR, Corner.UFL, Corner.UBL, Corner.UBR,
             Corner.DFR, Corner.DFL, Corner.DBL, Corner.DBR
         ];
-        CornerOrientations = new int[8];
+        CornerOrientation = new int[8];
 
         Edges = [
             Edge.UF, Edge.UR, Edge.UL, Edge.UB,
             Edge.DF, Edge.DR, Edge.DL, Edge.DB,
             Edge.FL, Edge.FR, Edge.BL, Edge.BR
         ];
-        EdgeOrientations = new int[12];
+        EdgeOrientation = new int[12];
     }
 
     public bool IsSolved() {
         for (int i = 0; i < Corners.Length; i++) {
-            if ((int)Corners[i] != i || CornerOrientations[i] != 0) return false;
+            if ((int)Corners[i] != i || CornerOrientation[i] != 0) return false;
         }
 
         for (int i = 0; i < Edges.Length; i++) {
-            if ((int)Edges[i] != i || EdgeOrientations[i] != 0) return false;
+            if ((int)Edges[i] != i || EdgeOrientation[i] != 0) return false;
         }
 
         return true;
@@ -120,6 +120,10 @@ public class Cube {
                 ApplyR();
                 break;
 
+            case Move.L:
+                ApplyL();
+                break;
+
             default:
                 throw new NotImplementedException();
         }
@@ -131,9 +135,9 @@ public class Cube {
     public override string ToString() {
         return $"""
             Corners: {string.Join(", ", Corners)}
-            CornerOrientations: {string.Join(", ", CornerOrientations)}
+            CornerOrientations: {string.Join(", ", CornerOrientation)}
             Edges: {string.Join(", ", Edges)}
-            EdgeOrientations: {string.Join(", ", EdgeOrientations)}
+            EdgeOrientations: {string.Join(", ", EdgeOrientation)}
         """;
     }
 
@@ -152,13 +156,12 @@ public class Cube {
      * Corner and Edge Orientations are not affected
     */
     private void ApplyU() {
-        (Corners[UFLIndex], Corners[UFRIndex], Corners[UBRIndex], Corners[UBLIndex])
-            = (Corners[UBLIndex], Corners[UFLIndex], Corners[UFRIndex], Corners[UBRIndex]);
+        (Corners[UFLIndex], Corners[UBLIndex], Corners[UBRIndex], Corners[UFRIndex])
+            = (Corners[UFRIndex], Corners[UFLIndex], Corners[UBLIndex], Corners[UBRIndex]);
 
-        (Edges[UFIndex], Edges[URIndex], Edges[UBIndex], Edges[ULIndex])
-            = (Edges[ULIndex], Edges[UFIndex], Edges[URIndex], Edges[UBIndex]);
+        (Edges[ULIndex], Edges[UBIndex], Edges[URIndex], Edges[UFIndex])
+            = (Edges[UFIndex], Edges[ULIndex], Edges[UBIndex], Edges[URIndex]);
     }
-
     /**
      * Apply D Rotation to the cube
      * Corners:
@@ -173,11 +176,11 @@ public class Cube {
      *    DL -> DF
      */
     private void ApplyD() {
-        (Corners[DFLIndex], Corners[DFRIndex], Corners[DBRIndex], Corners[DBLIndex])
-            = (Corners[DFRIndex], Corners[DBRIndex], Corners[DBLIndex], Corners[DFLIndex]);
+        (Corners[DFRIndex], Corners[DBRIndex], Corners[DBLIndex], Corners[DFLIndex])
+            = (Corners[DFLIndex], Corners[DFRIndex], Corners[DBRIndex], Corners[DBLIndex]);
 
-        (Edges[DFIndex], Edges[DRIndex], Edges[DBIndex], Edges[DLIndex])
-            = (Edges[DRIndex], Edges[DBIndex], Edges[DLIndex], Edges[DFIndex]);
+        (Edges[DRIndex], Edges[DBIndex], Edges[DLIndex], Edges[DFIndex])
+            = (Edges[DFIndex], Edges[DRIndex], Edges[DBIndex], Edges[DLIndex]);
     }
 
     /**
@@ -187,12 +190,39 @@ public class Cube {
      */
     private void ApplyR() {
         // Moving edges and corners
-        (Corners[UFRIndex], Corners[DFRIndex], Corners[DBRIndex], Corners[UBRIndex])
-            = (Corners[UBRIndex], Corners[UFRIndex], Corners[DFRIndex], Corners[DBRIndex]);
+        (Corners[UBRIndex], Corners[DBRIndex], Corners[DFRIndex], Corners[UFRIndex])
+            = (Corners[UFRIndex], Corners[UBRIndex], Corners[DBRIndex], Corners[DFRIndex]);
 
-        (Edges[FRIndex], Edges[DRIndex], Edges[BRIndex], Edges[URIndex])
+        (Edges[BRIndex], Edges[URIndex], Edges[FRIndex], Edges[DRIndex])
             = (Edges[URIndex], Edges[FRIndex], Edges[DRIndex], Edges[BRIndex]);
 
-        // Orienting edges and corners
+        // Orienting corners
+        (CornerOrientation[UBRIndex], CornerOrientation[DBRIndex], CornerOrientation[DFRIndex], CornerOrientation[UFRIndex])
+            = (
+                TwistCorner(CornerOrientation[UFRIndex], 1),
+                TwistCorner(CornerOrientation[UBRIndex], 2),
+                TwistCorner(CornerOrientation[DBRIndex], 1),
+                TwistCorner(CornerOrientation[DFRIndex], 2)
+            );
+    }
+
+    private void ApplyL() {
+        (Corners[UFLIndex], Corners[DFLIndex], Corners[DBLIndex], Corners[UBLIndex]) =
+            (Corners[UBLIndex], Corners[UFLIndex], Corners[DFLIndex], Corners[DBLIndex]);
+
+        (Edges[ULIndex], Edges[FLIndex], Edges[DLIndex], Edges[BLIndex]) =
+            (Edges[BLIndex], Edges[ULIndex], Edges[FLIndex], Edges[DLIndex]);
+
+        (CornerOrientation[UFLIndex], CornerOrientation[DFLIndex], CornerOrientation[DBLIndex], CornerOrientation[UBLIndex])
+            = (
+                TwistCorner(CornerOrientation[UBLIndex], 1),
+                TwistCorner(CornerOrientation[UFLIndex], 2),
+                TwistCorner(CornerOrientation[DFLIndex], 1),
+                TwistCorner(CornerOrientation[DBLIndex], 2)
+            );
+    }
+
+    private static int TwistCorner(int orientation, int delta) {
+        return (orientation + delta) % 3;
     }
 }
