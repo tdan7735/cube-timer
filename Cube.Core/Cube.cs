@@ -28,28 +28,28 @@ public class Cube {
     public int[] EdgeOrientation { get; }
 
     // Corner indices
-    private const int UFLIndex = 0;
-    private const int UBLIndex = 1;
-    private const int UBRIndex = 2;
-    private const int UFRIndex = 3;
-    private const int DFLIndex = 4;
-    private const int DBLIndex = 5;
-    private const int DBRIndex = 6;
-    private const int DFRIndex = 7;
+    private const int UFLPosition = 0;
+    private const int UBLPosition = 1;
+    private const int UBRPosition = 2;
+    private const int UFRPosition = 3;
+    private const int DFLPosition = 4;
+    private const int DBLPosition = 5;
+    private const int DBRPosition = 6;
+    private const int DFRPosition = 7;
 
     // Edge indices
-    private const int UFIndex = 0;
-    private const int ULIndex = 1;
-    private const int UBIndex = 2;
-    private const int URIndex = 3;
-    private const int FLIndex = 4;
-    private const int BLIndex = 5;
-    private const int BRIndex = 6;
-    private const int FRIndex = 7;
-    private const int DFIndex = 8;
-    private const int DLIndex = 9;
-    private const int DBIndex = 10;
-    private const int DRIndex = 11;
+    private const int UFPosition = 0;
+    private const int ULPosition = 1;
+    private const int UBPosition = 2;
+    private const int URPosition = 3;
+    private const int FLPosition = 4;
+    private const int BLPosition = 5;
+    private const int BRPosition = 6;
+    private const int FRPosition = 7;
+    private const int DFPosition = 8;
+    private const int DLPosition = 9;
+    private const int DBPosition = 10;
+    private const int DRPosition = 11;
 
     // Creates a new solved cube
     public Cube() {
@@ -155,11 +155,11 @@ public class Cube {
      *     UR -> UF
     */
     private void ApplyU() {
-        (Corners[UFLIndex], Corners[UBLIndex], Corners[UBRIndex], Corners[UFRIndex])
-            = (Corners[UFRIndex], Corners[UFLIndex], Corners[UBLIndex], Corners[UBRIndex]);
+        (Corners[UFLPosition], Corners[UBLPosition], Corners[UBRPosition], Corners[UFRPosition])
+            = (Corners[UFRPosition], Corners[UFLPosition], Corners[UBLPosition], Corners[UBRPosition]);
 
-        (Edges[ULIndex], Edges[UBIndex], Edges[URIndex], Edges[UFIndex])
-            = (Edges[UFIndex], Edges[ULIndex], Edges[UBIndex], Edges[URIndex]);
+        (Edges[ULPosition], Edges[UBPosition], Edges[URPosition], Edges[UFPosition])
+            = (Edges[UFPosition], Edges[ULPosition], Edges[UBPosition], Edges[URPosition]);
     }
     /**
      * Apply D Rotation to the cube
@@ -175,11 +175,11 @@ public class Cube {
      *    DL -> DF
      */
     private void ApplyD() {
-        (Corners[DFRIndex], Corners[DBRIndex], Corners[DBLIndex], Corners[DFLIndex])
-            = (Corners[DFLIndex], Corners[DFRIndex], Corners[DBRIndex], Corners[DBLIndex]);
+        (Corners[DFRPosition], Corners[DBRPosition], Corners[DBLPosition], Corners[DFLPosition])
+            = (Corners[DFLPosition], Corners[DFRPosition], Corners[DBRPosition], Corners[DBLPosition]);
 
-        (Edges[DRIndex], Edges[DBIndex], Edges[DLIndex], Edges[DFIndex])
-            = (Edges[DFIndex], Edges[DRIndex], Edges[DBIndex], Edges[DLIndex]);
+        (Edges[DRPosition], Edges[DBPosition], Edges[DLPosition], Edges[DFPosition])
+            = (Edges[DFPosition], Edges[DRPosition], Edges[DBPosition], Edges[DLPosition]);
     }
 
     /**
@@ -189,35 +189,35 @@ public class Cube {
      */
     private void ApplyR() {
         // Moving edges and corners
-        (Corners[UBRIndex], Corners[DBRIndex], Corners[DFRIndex], Corners[UFRIndex])
-            = (Corners[UFRIndex], Corners[UBRIndex], Corners[DBRIndex], Corners[DFRIndex]);
+        (Corners[UBRPosition], Corners[DBRPosition], Corners[DFRPosition], Corners[UFRPosition])
+            = (Corners[UFRPosition], Corners[UBRPosition], Corners[DBRPosition], Corners[DFRPosition]);
 
-        (Edges[URIndex], Edges[BRIndex], Edges[DRIndex], Edges[FRIndex])
-            = (Edges[FRIndex], Edges[URIndex], Edges[BRIndex], Edges[DRIndex]);
+        (Edges[URPosition], Edges[BRPosition], Edges[DRPosition], Edges[FRPosition])
+            = (Edges[FRPosition], Edges[URPosition], Edges[BRPosition], Edges[DRPosition]);
 
         // Orienting corners
-        (CornerOrientation[UBRIndex], CornerOrientation[DBRIndex], CornerOrientation[DFRIndex], CornerOrientation[UFRIndex])
+        (CornerOrientation[UBRPosition], CornerOrientation[DBRPosition], CornerOrientation[DFRPosition], CornerOrientation[UFRPosition])
             = (
-                TwistCorner(CornerOrientation[UFRIndex], 1),
-                TwistCorner(CornerOrientation[UBRIndex], 2),
-                TwistCorner(CornerOrientation[DBRIndex], 1),
-                TwistCorner(CornerOrientation[DFRIndex], 2)
+                TwistCorner(CornerOrientation[UFRPosition], 1),
+                TwistCorner(CornerOrientation[UBRPosition], 2),
+                TwistCorner(CornerOrientation[DBRPosition], 1),
+                TwistCorner(CornerOrientation[DFRPosition], 2)
             );
     }
 
     private void ApplyL() {
-        (Corners[UFLIndex], Corners[DFLIndex], Corners[DBLIndex], Corners[UBLIndex]) =
-            (Corners[UBLIndex], Corners[UFLIndex], Corners[DFLIndex], Corners[DBLIndex]);
+        (Corners[UFLPosition], Corners[DFLPosition], Corners[DBLPosition], Corners[UBLPosition]) =
+            (Corners[UBLPosition], Corners[UFLPosition], Corners[DFLPosition], Corners[DBLPosition]);
 
-        (Edges[ULIndex], Edges[FLIndex], Edges[DLIndex], Edges[BLIndex]) =
-            (Edges[BLIndex], Edges[ULIndex], Edges[FLIndex], Edges[DLIndex]);
+        (Edges[ULPosition], Edges[FLPosition], Edges[DLPosition], Edges[BLPosition]) =
+            (Edges[BLPosition], Edges[ULPosition], Edges[FLPosition], Edges[DLPosition]);
 
-        (CornerOrientation[UFLIndex], CornerOrientation[DFLIndex], CornerOrientation[DBLIndex], CornerOrientation[UBLIndex])
+        (CornerOrientation[UFLPosition], CornerOrientation[DFLPosition], CornerOrientation[DBLPosition], CornerOrientation[UBLPosition])
             = (
-                TwistCorner(CornerOrientation[UBLIndex], 1),
-                TwistCorner(CornerOrientation[UFLIndex], 2),
-                TwistCorner(CornerOrientation[DFLIndex], 1),
-                TwistCorner(CornerOrientation[DBLIndex], 2)
+                TwistCorner(CornerOrientation[UBLPosition], 1),
+                TwistCorner(CornerOrientation[UFLPosition], 2),
+                TwistCorner(CornerOrientation[DFLPosition], 1),
+                TwistCorner(CornerOrientation[DBLPosition], 2)
             );
     }
 
