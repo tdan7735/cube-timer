@@ -153,6 +153,11 @@ public class Cube {
      *     UL -> UB
      *     UB -> UR
      *     UR -> UF
+     * Corner orientations:
+     *     If orietnation is 0, then it stays 0
+     *     If orientation is 1, then it goes to 2
+     *     If orientation is 2, then it goes to 1
+     * Edge orientations stay the same since the upper edge will still be facing up
     */
     private void ApplyU() {
         (Corners[UFLPosition], Corners[UBLPosition], Corners[UBRPosition], Corners[UFRPosition])
@@ -160,6 +165,14 @@ public class Cube {
 
         (Edges[ULPosition], Edges[UBPosition], Edges[URPosition], Edges[UFPosition])
             = (Edges[UFPosition], Edges[ULPosition], Edges[UBPosition], Edges[URPosition]);
+
+        (CornerOrientation[UFLPosition], CornerOrientation[UBLPosition], CornerOrientation[UBRPosition], CornerOrientation[UFRPosition])
+            = (
+                RotateCornerForTopOrBottomMove(CornerOrientation[UFRPosition]),
+                RotateCornerForTopOrBottomMove(CornerOrientation[UFLPosition]),
+                RotateCornerForTopOrBottomMove(CornerOrientation[UBLPosition]),
+                RotateCornerForTopOrBottomMove(CornerOrientation[UBRPosition])
+            );
     }
     /**
      * Apply D Rotation to the cube
@@ -180,6 +193,14 @@ public class Cube {
 
         (Edges[DRPosition], Edges[DBPosition], Edges[DLPosition], Edges[DFPosition])
             = (Edges[DFPosition], Edges[DRPosition], Edges[DBPosition], Edges[DLPosition]);
+
+        (CornerOrientation[DFRPosition], CornerOrientation[DBRPosition], CornerOrientation[DBLPosition], CornerOrientation[DFLPosition])
+            = (
+                RotateCornerForTopOrBottomMove(CornerOrientation[DFLPosition]),
+                RotateCornerForTopOrBottomMove(CornerOrientation[DFRPosition]),
+                RotateCornerForTopOrBottomMove(CornerOrientation[DBRPosition]),
+                RotateCornerForTopOrBottomMove(CornerOrientation[DBLPosition])
+            );
     }
 
     /**
@@ -195,14 +216,13 @@ public class Cube {
         (Edges[URPosition], Edges[BRPosition], Edges[DRPosition], Edges[FRPosition])
             = (Edges[FRPosition], Edges[URPosition], Edges[BRPosition], Edges[DRPosition]);
 
-        // Orienting corners
         (CornerOrientation[UBRPosition], CornerOrientation[DBRPosition], CornerOrientation[DFRPosition], CornerOrientation[UFRPosition])
             = (
-                TwistCorner(CornerOrientation[UFRPosition], 1),
-                TwistCorner(CornerOrientation[UBRPosition], 2),
-                TwistCorner(CornerOrientation[DBRPosition], 1),
-                TwistCorner(CornerOrientation[DFRPosition], 2)
-            );
+                RotateCornerForLeftOrRightMove(CornerOrientation[UFRPosition]),
+                RotateCornerForLeftOrRightMove(CornerOrientation[UBRPosition]),
+                RotateCornerForLeftOrRightMove(CornerOrientation[DBRPosition]),
+                RotateCornerForLeftOrRightMove(CornerOrientation[DFRPosition])
+              );
     }
 
     private void ApplyL() {
@@ -214,14 +234,46 @@ public class Cube {
 
         (CornerOrientation[UFLPosition], CornerOrientation[DFLPosition], CornerOrientation[DBLPosition], CornerOrientation[UBLPosition])
             = (
-                TwistCorner(CornerOrientation[UBLPosition], 1),
-                TwistCorner(CornerOrientation[UFLPosition], 2),
-                TwistCorner(CornerOrientation[DFLPosition], 1),
-                TwistCorner(CornerOrientation[DBLPosition], 2)
-            );
+                RotateCornerForFrontOrBackMove(CornerOrientation[UBLPosition]),
+                RotateCornerForFrontOrBackMove(CornerOrientation[UFLPosition]),
+                RotateCornerForFrontOrBackMove(CornerOrientation[DFLPosition]),
+                RotateCornerForFrontOrBackMove(CornerOrientation[DBLPosition])
+              );
+
     }
 
-    private static int TwistCorner(int orientation, int delta) {
-        return (orientation + delta) % 3;
+    private static int RotateCornerForTopOrBottomMove(int orientation) {
+        return orientation switch {
+            0 => 0,
+            1 => 2,
+            2 => 1,
+            _ => throw new ArgumentOutOfRangeException(nameof(orientation))
+        };
+    }
+
+    private static int RotateCornerForLeftOrRightMove(int orientation) {
+        return orientation switch {
+            0 => 1,
+            1 => 0,
+            2 => 2,
+            _ => throw new ArgumentOutOfRangeException(nameof(orientation))
+        };
+    }
+
+    private static int RotateCornerForFrontOrBackMove(int orientation) {
+        return orientation switch {
+            0 => 2,
+            1 => 1,
+            2 => 0,
+            _ => throw new ArgumentOutOfRangeException(nameof(orientation))
+        };
+    }
+
+    private static int RotateEdgeForFrontOrBackMove(int orientation) {
+        return orientation switch {
+            0 => 1,
+            1 => 0,
+            _ => throw new ArgumentOutOfRangeException(nameof(orientation))
+        };
     }
 }
