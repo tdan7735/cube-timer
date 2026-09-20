@@ -1,14 +1,14 @@
 namespace Cube.Core;
 
 public enum Corner {
-    UFR, UFL, UBL, UBR,
-    DFR, DFL, DBL, DBR
+    UFL, UBL, UBR, UFR,
+    DFL, DBL, DBR, DFR
 }
 
 public enum Edge {
-    UF, UR, UL, UB,
-    DF, DR, DL, DB,
-    FL, FR, BL, BR,
+    UF, UL, UB, UR,
+    FL, BL, BR, FR,
+    DF, DL, DB, DR,
 }
 
 public enum Move {
@@ -28,41 +28,41 @@ public class Cube {
     public int[] EdgeOrientation { get; }
 
     // Corner indices
-    private const int UFRIndex = 0;
-    private const int UFLIndex = 1;
-    private const int UBLIndex = 2;
-    private const int UBRIndex = 3;
-    private const int DFRIndex = 4;
-    private const int DFLIndex = 5;
-    private const int DBLIndex = 6;
-    private const int DBRIndex = 7;
+    private const int UFLIndex = 0;
+    private const int UBLIndex = 1;
+    private const int UBRIndex = 2;
+    private const int UFRIndex = 3;
+    private const int DFLIndex = 4;
+    private const int DBLIndex = 5;
+    private const int DBRIndex = 6;
+    private const int DFRIndex = 7;
 
     // Edge indices
     private const int UFIndex = 0;
-    private const int URIndex = 1;
-    private const int ULIndex = 2;
-    private const int UBIndex = 3;
-    private const int DFIndex = 4;
-    private const int DRIndex = 5;
-    private const int DLIndex = 6;
-    private const int DBIndex = 7;
-    private const int FLIndex = 8;
-    private const int FRIndex = 9;
-    private const int BLIndex = 10;
-    private const int BRIndex = 11;
+    private const int ULIndex = 1;
+    private const int UBIndex = 2;
+    private const int URIndex = 3;
+    private const int FLIndex = 4;
+    private const int BLIndex = 5;
+    private const int BRIndex = 6;
+    private const int FRIndex = 7;
+    private const int DFIndex = 8;
+    private const int DLIndex = 9;
+    private const int DBIndex = 10;
+    private const int DRIndex = 11;
 
     // Creates a new solved cube
     public Cube() {
         Corners = [
-            Corner.UFR, Corner.UFL, Corner.UBL, Corner.UBR,
-            Corner.DFR, Corner.DFL, Corner.DBL, Corner.DBR
+            Corner.UFL, Corner.UBL, Corner.UBR, Corner.UFR,
+            Corner.DFL, Corner.DBL, Corner.DBR, Corner.DFR
         ];
         CornerOrientation = new int[8];
 
         Edges = [
-            Edge.UF, Edge.UR, Edge.UL, Edge.UB,
-            Edge.DF, Edge.DR, Edge.DL, Edge.DB,
-            Edge.FL, Edge.FR, Edge.BL, Edge.BR
+            Edge.UF, Edge.UL, Edge.UB, Edge.UR,
+            Edge.FL, Edge.BL, Edge.BR, Edge.FR,
+            Edge.DF, Edge.DL, Edge.DB, Edge.DR,
         ];
         EdgeOrientation = new int[12];
     }
