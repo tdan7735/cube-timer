@@ -12,6 +12,9 @@ public class AlgorithmService(AppDbContext context) {
         return await context.AlgorithmSets
             .Include(s => s.Cases)
             .ThenInclude(c => c.Algorithms)
+            .Include(s => s.Groups)
+            .ThenInclude(g => g.Cases)
+            .ThenInclude(c => c.Algorithms)
             .FirstOrDefaultAsync(s => s.Name == name);
     }
 
@@ -22,6 +25,9 @@ public class AlgorithmService(AppDbContext context) {
         return await context.AlgorithmSets
             .Include(s => s.Cases)
             .ThenInclude(c => c.Algorithms)
+            .Include(s => s.Groups)
+            .ThenInclude(g => g.Cases)
+            .ThenInclude(c => c.Algorithms)
             .ToListAsync();
     }
 
@@ -31,6 +37,7 @@ public class AlgorithmService(AppDbContext context) {
     public async Task<AlgorithmCase?> GetAlgorithmCase(int id) {
         return await context.AlgorithmCases
             .Include(c => c.Algorithms)
+            .Include(c => c.AlgorithmGroup)
             .FirstOrDefaultAsync(c => c.Id == id);
     }
 
@@ -40,6 +47,7 @@ public class AlgorithmService(AppDbContext context) {
     public async Task<AlgorithmCase?> GetAlgorithmCase(string name) {
         return await context.AlgorithmCases
             .Include(c => c.Algorithms)
+            .Include(c => c.AlgorithmGroup)
             .FirstOrDefaultAsync(c => c.Name == name);
     }
 }

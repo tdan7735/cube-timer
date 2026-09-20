@@ -15,28 +15,21 @@ public class AlgorithmController(AlgorithmService service) : ControllerBase {
             var resSet = new AlgorithmSetResponse {
                 Id = set.Id,
                 Name = set.Name,
+                Groups = [],
                 Cases = [],
             };
 
-            foreach (var c in set.Cases) {
-                var resCase = new AlgorithmCaseResponse {
-                    Id = c.Id,
-                    Name = c.Name,
-                    Algorithms = [],
-                };
-
-                foreach (var a in c.Algorithms) {
-                    var resAlgorithm = new AlgorithmResponse {
-                        Id = a.Id,
-                        Moves = a.Moves,
-                        UserId = a.UserId,
-                    };
-
-                    resCase.Algorithms.Add(resAlgorithm);
-                }
-
-                resSet.Cases.Add(resCase);
+            foreach (var group in set.Groups) {
+                resSet.Groups.Add(new AlgorithmGroupResponse {
+                    Id = group.Id,
+                    Name = group.Name,
+                    Cases = group.Cases.Select(ToCaseResponse).ToList(),
+                });
             }
+
+            resSet.Cases.AddRange(set.Cases
+                .Where(c => c.AlgorithmGroupId == null)
+                .Select(ToCaseResponse));
         }
 
         return Ok(res);
@@ -53,35 +46,45 @@ public class AlgorithmController(AlgorithmService service) : ControllerBase {
         var res = new AlgorithmSetResponse {
             Id = algorithmSet.Id,
             Name = algorithmSet.Name,
+            Groups = [],
             Cases = [],
         };
 
-        foreach (var c in algorithmSet.Cases) {
-            var resCase = new AlgorithmCaseResponse {
-                Id = c.Id,
-                Name = c.Name,
-                Algorithms = [],
-            };
-
-            foreach (var a in c.Algorithms) {
-                var resAlgorithm = new AlgorithmResponse {
-                    Id = a.Id,
-                    Moves = a.Moves,
-                    UserId = a.UserId,
-                };
-
-                resCase.Algorithms.Add(resAlgorithm);
-            }
-
-            res.Cases.Add(resCase);
+        foreach (var group in algorithmSet.Groups) {
+            res.Groups.Add(new AlgorithmGroupResponse {
+                Id = group.Id,
+                Name = group.Name,
+                Cases = group.Cases.Select(ToCaseResponse).ToList(),
+            });
         }
 
+        res.Cases.AddRange(algorithmSet.Cases
+            .Where(c => c.AlgorithmGroupId == null)
+            .Select(ToCaseResponse));
 
         return Ok(res);
     }
+
+    private static AlgorithmCaseResponse ToCaseResponse(Models.AlgorithmCase algorithmCase) => new() {
+        Id = algorithmCase.Id,
+        Name = algorithmCase.Name,
+        CaseNumber = algorithmCase.CaseNumber,
+        Algorithms = algorithmCase.Algorithms.Select(a => new AlgorithmResponse {
+            Id = a.Id,
+            Moves = a.Moves,
+            UserId = a.UserId,
+        }).ToList(),
+    };
 }
 
 public class AlgorithmSetResponse {
+    public required int Id { get; set; }
+    public required string Name { get; set; }
+    public required List<AlgorithmGroupResponse> Groups { get; set; }
+    public required List<AlgorithmCaseResponse> Cases { get; set; }
+}
+
+public class AlgorithmGroupResponse {
     public required int Id { get; set; }
     public required string Name { get; set; }
     public required List<AlgorithmCaseResponse> Cases { get; set; }
@@ -90,6 +93,7 @@ public class AlgorithmSetResponse {
 public class AlgorithmCaseResponse {
     public required int Id { get; set; }
     public required string Name { get; set; }
+    public int? CaseNumber { get; set; }
     public required List<AlgorithmResponse> Algorithms { get; set; }
 }
 
