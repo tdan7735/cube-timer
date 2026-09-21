@@ -49,9 +49,9 @@ export function deleteAllSolves(): Promise<void> {
 }
 
 export async function getScramble(): Promise<string> {
-  const res = await request<string>(`/api/scramble/3x3`);
-
-  console.log(res);
-
-  return res;
+  const res = await request<{ scramble: string }>(`/api/scramble/3x3`, { cache: "no-store" });
+  if (typeof res.scramble !== "string" || !res.scramble.trim()) {
+    throw new Error("The server returned an empty scramble.");
+  }
+  return res.scramble;
 }

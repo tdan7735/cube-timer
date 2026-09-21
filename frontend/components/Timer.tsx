@@ -9,15 +9,18 @@ export type Phase = "idle" | "ready" | "running";
 interface TimerProps {
   onSolve: (timeMs: number, penalty: Penalty) => void;
   onPhaseChange: (phase: Phase) => void;
+  disabled?: boolean;
 }
 
-export function Timer({ onSolve, onPhaseChange }: TimerProps) {
+export function Timer({ onSolve, onPhaseChange, disabled = false }: TimerProps) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [elapsed, setElapsed] = useState(0);
 
   const phaseRef = useRef<Phase>("idle");
   const startTime = useRef(0);
   const raf = useRef(0);
+  const disabledRef = useRef(disabled);
+  disabledRef.current = disabled;
   const onSolveRef = useRef(onSolve);
   onSolveRef.current = onSolve;
   const onPhaseChangeRef = useRef(onPhaseChange);
@@ -41,6 +44,9 @@ export function Timer({ onSolve, onPhaseChange }: TimerProps) {
     }
 
     function onKeyDown(e: KeyboardEvent) {
+      if (e.repeat) return;
+      if (phaseRef.current === "idle" && (disabledRef.current ||
+        (e.target instanceof HTMLElement && e.target.closest("button, a, input, textarea, select, [contenteditable]")))) return;
       if (e.code === "Escape" && phaseRef.current === "running") {
         e.preventDefault();
         stop(Penalty.DNF);
@@ -62,6 +68,7 @@ export function Timer({ onSolve, onPhaseChange }: TimerProps) {
 
     function onKeyUp(e: KeyboardEvent) {
       if (e.code !== "Space") return;
+      if (phaseRef.current !== "ready") return;
       e.preventDefault();
 
       const p = phaseRef.current;
@@ -97,7 +104,7 @@ export function Timer({ onSolve, onPhaseChange }: TimerProps) {
         {formatTime(elapsed)}
       </div>
       <div className="timer-hint">
-        {phase === "idle" && "hold space"}
+        {phase === "idle" && (disabled ? "waiting for scramble / save" : "hold space")}
         {phase === "ready" && "release to start"}
         {phase === "running" && "press space to stop · esc for dnf"}
       </div>

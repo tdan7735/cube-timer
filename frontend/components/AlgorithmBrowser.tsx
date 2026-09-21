@@ -103,9 +103,6 @@ export function AlgorithmBrowser({ name }: { name: string }) {
   return (
     <section className="algorithms-page">
       <Link className="algorithm-back" href="/algorithms">← All algorithms</Link>
-      <h1>{name} algorithms</h1>
-      <p>One standard algorithm per case. Click a move sequence to choose from its alternatives.</p>
-      <p>Standard selections are shared across users.</p>
       {error ? <div role="alert" className="algorithm-case">
         <p>{error}</p><button onClick={() => { setError(""); setAttempt(attempt + 1); }}>Retry</button>
       </div> : !data ? <p role="status">Loading algorithms…</p> : (
