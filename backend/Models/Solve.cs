@@ -19,6 +19,8 @@ public class Solve {
     public required int SolveTime { get; set; }    // in milliseconds without penalty
     public required DateTime TimeSolved { get; set; }
     public required SolveType Type { get; set; }
+    public int? SessionId { get; set; }
+    public Session? Session { get; set; }
 
     public int FinalTime() {
         if (Penalty == Penalty.Plus2) {

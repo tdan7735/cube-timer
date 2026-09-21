@@ -33,4 +33,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<AlgorithmGroup> AlgorithmGroups { get; set; }    // Dot Case, Fish Shapes, etc.
     public DbSet<AlgorithmCase> AlgorithmCases { get; set; }      // Aa, Ab, F, etc.
     public DbSet<Algorithm> Algorithms { get; set; }              // The actual algorithm itself
+
+    public DbSet<Session> Sessions { get; set; }
+    public DbSet<User> Users { get; set; }
 }
