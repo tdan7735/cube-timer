@@ -13,7 +13,7 @@ export function OllDiagram({ caseNumber }: { caseNumber: number }) {
   const color = (sticker: string) => sticker === "y" ? "#facc15" : "#555";
 
   return (
-    <svg className="case-diagram" viewBox="0 0 154 170" role="img"
+    <svg className="h-[170px] w-[154px] shrink-0 self-center" viewBox="0 0 154 170" role="img"
       aria-label={`OLL ${caseNumber}: top view showing yellow sticker orientation`}>
       <title>OLL {caseNumber} case</title>
       <desc>Yellow stickers show the last-layer orientation; grey stickers are other colours.

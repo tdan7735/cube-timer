@@ -18,11 +18,11 @@ export function Stats({ stats }: StatsProps) {
   ];
 
   return (
-    <div className="stats">
+    <div className="flex gap-8 animate-fade-in">
       {items.map(({ label, value }) => (
-        <div key={label} className="stat">
-          <span className="stat-label">{label}</span>
-          <span className="stat-value">
+        <div key={label} className="flex flex-col items-center gap-0.5">
+          <span className="text-[11px] uppercase tracking-[1px] text-cube-dim">{label}</span>
+          <span className="font-mono text-lg font-normal">
             {value !== null && value >= 0 ? formatTime(value) : "—"}
           </span>
         </div>

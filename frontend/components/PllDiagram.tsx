@@ -41,7 +41,7 @@ export function PllDiagram({ name }: { name: string }) {
   ];
 
   return (
-    <svg className="case-diagram" viewBox="0 0 154 170" role="img"
+    <svg className="h-[170px] w-[154px] shrink-0 self-center" viewBox="0 0 154 170" role="img"
       aria-label={`${name} permutation: top view with yellow face and side sticker pattern`}>
       <title>{name} PLL case</title>
       <desc>Reference orientation, front at the bottom. Alternatives may use a different starting grip.</desc>

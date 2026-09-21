@@ -7,10 +7,11 @@ import { AlgorithmTrainer } from "./AlgorithmTrainer";
 export function AlgorithmSetTabs({ name }: { name: string }) {
   const [tab, setTab] = useState("algorithms");
   return (
-    <div className="algorithm-set-page">
-      <div className="set-tabs" role="tablist" aria-label={`${name} pages`}>
+    <div>
+      <div className="flex justify-center border-b border-cube-border px-5" role="tablist" aria-label={`${name} pages`}>
         {["algorithms", "trainer"].map((value, index) => (
           <button key={value} role="tab" id={`${value}-tab`} aria-controls={`${value}-panel`}
+            className={`min-w-32 cursor-pointer border border-cube-border bg-cube-surface px-5 py-3 text-[#aaa] ${tab === value ? "border-cube-green bg-cube-green/8 text-cube-green" : ""}`}
             aria-selected={tab === value} tabIndex={tab === value ? 0 : -1}
             onClick={() => setTab(value)} onKeyDown={(event) => {
               if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;

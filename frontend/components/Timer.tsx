@@ -93,17 +93,17 @@ export function Timer({ onSolve, onPhaseChange, disabled = false }: TimerProps) 
 
   const colour =
     phase === "ready"
-      ? "var(--green)"
+      ? "var(--color-cube-green)"
       : phase === "running"
-        ? "var(--text)"
-        : "var(--text-dim)";
+        ? "var(--color-cube-text)"
+        : "var(--color-cube-dim)";
 
   return (
-    <div className="timer-wrap">
-      <div className="timer" style={{ color: colour }}>
+    <div className="flex flex-col items-center gap-2">
+      <div className="font-mono text-8xl font-extralight leading-none tracking-[-2px] transition-colors duration-150" style={{ color: colour }}>
         {formatTime(elapsed)}
       </div>
-      <div className="timer-hint">
+      <div className="text-[13px] lowercase tracking-[0.5px] text-cube-dim">
         {phase === "idle" && (disabled ? "waiting for scramble / save" : "hold space")}
         {phase === "ready" && "release to start"}
         {phase === "running" && "press space to stop · esc for dnf"}

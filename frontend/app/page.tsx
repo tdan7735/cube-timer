@@ -97,9 +97,9 @@ export default function Home() {
   const timing = phase !== "idle";
 
   return (
-    <div className="app">
-      <div className="center">
-        {!timing && <div className="scramble">
+    <div className="flex h-full">
+      <div className="relative flex flex-1 flex-col items-center justify-center gap-8">
+        {!timing && <div className="absolute top-8 right-0 left-0 animate-fade-in text-center font-mono text-2xl leading-normal tracking-[1.5px] text-cube-text">
           {loadingScramble ? "" : scramble}
           {scrambleError && <div role="alert">{scrambleError} <button onClick={() => void loadScramble()}>Retry</button></div>}
         </div>}
@@ -109,8 +109,8 @@ export default function Home() {
         {!timing && <Stats stats={stats} />}
       </div>
       {!timing && (
-        <aside className="sidebar">
-          <div className="sidebar-header">Solves</div>
+        <aside className="order-first flex w-[280px] flex-col overflow-hidden border-r border-cube-border animate-fade-in">
+          <div className="border-b border-cube-border px-5 pt-4 pb-3 text-[11px] uppercase tracking-[1px] text-cube-dim">Solves</div>
           <SolveList solves={solves} onDelete={handleDelete} />
         </aside>
       )}

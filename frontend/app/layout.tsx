@@ -16,9 +16,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      <body className="flex flex-col">
         <TopBar />
-        <main className="page-content">{children}</main>
+        <main className="min-h-0 flex-1 overflow-auto">{children}</main>
       </body>
     </html>
   );
