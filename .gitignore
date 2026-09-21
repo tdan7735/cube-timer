@@ -20,6 +20,13 @@
 *.userosscache
 *.sln.ide
 
+**.**/bin/
+**/obj/
+**/TestResults/
+**/artifacts/
+**/coverage/
+
+
 # Frontend dependencies and generated output
 **/node_modules/
 **/.next/
