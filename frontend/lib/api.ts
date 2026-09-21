@@ -1,4 +1,15 @@
 import type { Solve, Statistics, PostSolveRequest } from "./types";
+import type { Algorithm, AlgorithmSet } from "./types";
+
+export function getAlgorithmSet(name: string, signal?: AbortSignal): Promise<AlgorithmSet> {
+  return request<AlgorithmSet>(`/api/algorithm/${encodeURIComponent(name)}`, { signal });
+}
+
+export function setStandardAlgorithm(id: number): Promise<Algorithm> {
+  return request<Algorithm>(`/api/algorithm/${id}/standard`, {
+    method: "PUT",
+  });
+}
 
 const BASE = "/api/solves";
 

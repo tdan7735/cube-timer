@@ -5,6 +5,23 @@ using Microsoft.EntityFrameworkCore;
 namespace backend.Services;
 
 public class AlgorithmService(AppDbContext context) {
+    public async Task<Algorithm?> SetStandardAlgorithm(int id) {
+        await using var transaction = await context.Database.BeginTransactionAsync();
+        var algorithm = await context.Algorithms.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id);
+        if (algorithm == null) return null;
+        // Serialize selections within a case so concurrent requests cannot select two standards.
+        await context.Database.ExecuteSqlInterpolatedAsync(
+            $"SELECT 1 FROM \"AlgorithmCases\" WHERE \"Id\" = {algorithm.AlgorithmCaseId} FOR UPDATE");
+        await context.Algorithms.Where(a => a.AlgorithmCaseId == algorithm.AlgorithmCaseId && a.IsStandard)
+            .ExecuteUpdateAsync(update => update.SetProperty(a => a.IsStandard, false));
+        var updated = await context.Algorithms.Where(a => a.Id == id)
+            .ExecuteUpdateAsync(update => update.SetProperty(a => a.IsStandard, true));
+        if (updated == 0) return null;
+        await transaction.CommitAsync();
+        algorithm.IsStandard = true;
+        return algorithm;
+    }
+
     /**
      * Get a specific algorithm set by name
      */

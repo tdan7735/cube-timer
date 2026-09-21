@@ -7,6 +7,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Solve> Solves { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
+        modelBuilder.Entity<Algorithm>()
+            .HasIndex(a => a.AlgorithmCaseId, "IX_Algorithms_StandardPerCase")
+            .IsUnique()
+            .HasFilter("\"IsStandard\" = true");
+
         modelBuilder.Entity<Solve>()
             .ToTable("Solves", table =>
                     table.HasCheckConstraint(

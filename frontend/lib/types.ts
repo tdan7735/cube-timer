@@ -32,3 +32,24 @@ export interface PostSolveRequest {
   penalty: Penalty;
   solveTime: number;
 }
+
+export interface Algorithm {
+  isStandard: boolean;
+  id: number;
+  moves: string;
+  userId: number | null;
+}
+
+export interface AlgorithmCase {
+  id: number;
+  name: string;
+  caseNumber: number | null;
+  algorithms: Algorithm[];
+}
+
+export interface AlgorithmSet {
+  id: number;
+  name: string;
+  cases: AlgorithmCase[];
+  groups: { id: number; name: string; cases: AlgorithmCase[] }[];
+}

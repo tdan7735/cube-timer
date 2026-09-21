@@ -30,6 +30,7 @@ public class AlgorithmController(AlgorithmService service) : ControllerBase {
             resSet.Cases.AddRange(set.Cases
                 .Where(c => c.AlgorithmGroupId == null)
                 .Select(ToCaseResponse));
+            res.Add(resSet);
         }
 
         return Ok(res);
@@ -65,14 +66,27 @@ public class AlgorithmController(AlgorithmService service) : ControllerBase {
         return Ok(res);
     }
 
+    [HttpPut("{id:int}/standard")]
+    public async Task<ActionResult<AlgorithmResponse>> SetStandardAlgorithm(int id) {
+        var algorithm = await service.SetStandardAlgorithm(id);
+        if (algorithm == null) return NotFound();
+        return Ok(new AlgorithmResponse {
+            Id = algorithm.Id,
+            Moves = algorithm.Moves,
+            UserId = algorithm.UserId,
+            IsStandard = algorithm.IsStandard,
+        });
+    }
+
     private static AlgorithmCaseResponse ToCaseResponse(Models.AlgorithmCase algorithmCase) => new() {
         Id = algorithmCase.Id,
         Name = algorithmCase.Name,
         CaseNumber = algorithmCase.CaseNumber,
-        Algorithms = algorithmCase.Algorithms.Select(a => new AlgorithmResponse {
+        Algorithms = algorithmCase.Algorithms.OrderBy(a => a.Id).Select(a => new AlgorithmResponse {
             Id = a.Id,
             Moves = a.Moves,
             UserId = a.UserId,
+            IsStandard = a.IsStandard,
         }).ToList(),
     };
 }
@@ -98,6 +112,7 @@ public class AlgorithmCaseResponse {
 }
 
 public class AlgorithmResponse {
+    public bool IsStandard { get; set; }
     public required int Id { get; set; }
     public required string Moves { get; set; }
     public int? UserId { get; set; }
