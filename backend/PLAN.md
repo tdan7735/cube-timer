@@ -13,7 +13,6 @@ The core idea is a personal platform where you can:
 * track algorithms
 * identify weaknesses
 * practise algorithms
-* receive personalised training recommendations
 
 The important part is that **version 1 should be small**. Don't start by trying to build the entire platform.
 
@@ -216,7 +215,7 @@ One of the things you'll learn from this project is **database design through it
 
 This should be your first milestone.
 
-Forget AI, authentication, Azure, fancy analytics, etc.
+Forget authentication, Azure, fancy analytics, etc.
 
 Just make this work:
 
@@ -349,56 +348,7 @@ This gives you an opportunity to demonstrate **actual business logic**, rather t
 
 ---
 
-# 7. Add a scramble generator
-
-Now build your own scramble generation service.
-
-For example:
-
-```text
-POST /api/scrambles
-```
-
-Response:
-
-```json
-{
-  "scramble": "R U2 F' L2 D B..."
-}
-```
-
-You can eventually support:
-
-* 2×2
-* 3×3
-* 4×4
-* 5×5
-* Pyraminx
-* etc.
-
-I'd start with **3×3 only**.
-
-This also gives you an interesting technical problem:
-
-> How do I generate valid scrambles while avoiding redundant moves?
-
-For example, you don't want:
-
-```text
-R R'
-```
-
-or:
-
-```text
-U U2
-```
-
-This is a good little algorithmic component.
-
----
-
-# 8. Add sessions
+# 7. Add sessions
 
 Instead of treating every solve independently:
 
@@ -429,7 +379,7 @@ This makes the application much more useful.
 
 ---
 
-# 9. Add algorithm training
+# 8. Add algorithm training
 
 This is where I think the project starts becoming **really interesting**.
 
@@ -489,41 +439,7 @@ Now you have a **training system**, not just a timer.
 
 ---
 
-# 10. Add an AI coach
-
-This should come **late**, not early.
-
-Once you've collected enough data, you can build:
-
-> **Cube Coach**
-
-Ask:
-
-> "What should I practise this week?"
-
-The backend gathers:
-
-* recent solves
-* Ao5/Ao12 trends
-* algorithm weaknesses
-* practice frequency
-* recognition times
-
-and sends structured information to an LLM.
-
-The model might respond:
-
-> Your overall averages have improved, but your last 50 solves show increased variance during PLL. Consider spending 15 minutes practising your weakest PLL algorithms before your next timed session.
-
-Now you're combining:
-
-**.NET + data + AI + your existing ML/LLM experience.**
-
-That's a very strong portfolio story.
-
----
-
-# 11. Add authentication
+# 9. Add authentication
 
 Once the core application works:
 
@@ -553,7 +469,7 @@ Your existing capstone already has authentication and role-based access experien
 
 ---
 
-# 12. Add proper testing
+# 10. Add proper testing
 
 I'd aim for:
 
@@ -594,7 +510,7 @@ on your resume.
 
 ---
 
-# 13. Add production-quality features
+# 11. Add production-quality features
 
 Once the actual product works, this is where you make it impressive to a recruiter.
 
@@ -645,7 +561,7 @@ Document every API endpoint.
 
 ---
 
-# 14. Dockerise it
+# 12. Dockerise it
 
 Your current resume already lists Docker. 
 
@@ -669,7 +585,7 @@ That's a nice demonstration of practical engineering.
 
 ---
 
-# 15. Add CI/CD
+# 13. Add CI/CD
 
 Use GitHub Actions.
 
@@ -698,7 +614,7 @@ Now your project starts looking like something you'd encounter in a professional
 
 ---
 
-# 16. Eventually deploy it
+# 14. Eventually deploy it
 
 Potential architecture:
 
@@ -721,6 +637,23 @@ The point is to be able to tell an interviewer:
 > "I developed the API in ASP.NET Core, persisted data through EF Core into SQL Server, containerised the application, created automated tests and deployed it to Azure."
 
 That's an **excellent junior .NET developer story**.
+
+---
+
+# 15. Add a WCA-standard scramble generator — final milestone
+
+Keep the existing basic 3×3 scramble generator while building the rest of the platform.
+
+After the other milestones are complete, replace it with a scramble generator suitable for WCA-style practice. Start with 3×3 and use a proven implementation of the relevant random-state scrambling method.
+
+Include:
+
+* integrate the generator with the timer
+* verify the generated scrambles and event-specific behaviour
+* add automated tests
+* consider additional events later
+
+Avoid treating the current random-move generator as WCA-standard.
 
 ---
 
@@ -798,7 +731,7 @@ Build:
 
 Add:
 
-* [ ] scramble generation
+* [x] basic 3×3 scramble generation (WCA-standard generation is deferred to Phase 8)
 * [x] Ao5
 * [x] Ao12
 * [x] Ao50
@@ -858,14 +791,14 @@ Add:
 
 ---
 
-### ⚪ Phase 8 — AI
+### ⚪ Phase 8 — WCA-standard scramble generation (final milestone)
 
-Finally:
+Complete this after the other project phases.
 
-* [ ] **Cube Coach**
-* [ ] prepare structured performance data for an LLM
-* [ ] personalised training recommendations
-
-Use your existing AI experience to turn the application into something genuinely personalised.
+* [ ] choose a proven WCA-style 3×3 random-state scramble implementation
+* [ ] replace the basic scramble generator and integrate it with the timer
+* [ ] verify scramble correctness and event-specific behaviour
+* [ ] add automated tests for the generator and integration
+* [ ] consider additional WCA events later
 
 ---
