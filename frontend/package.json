@@ -3,12 +3,16 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
+    "predev": "node scripts/prepare-cubing.mjs",
+    "prebuild": "node scripts/prepare-cubing.mjs",
+    "test:case-scrambles": "node scripts/prepare-cubing.mjs && node scripts/check-case-scrambles.mjs",
     "dev": "next dev --port 3000",
     "build": "next build",
     "start": "next start",
     "lint": "oxlint"
   },
   "dependencies": {
+    "cubing": "^0.63.6",
     "next": "^15.3.4",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
@@ -17,6 +21,7 @@
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "esbuild": "^0.28.2",
     "oxlint": "^1.79.0",
     "typescript": "~6.0.2"
   }
