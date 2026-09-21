@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { TopBar } from "../components/TopBar";
 
 export const metadata: Metadata = {
   title: "Cube Timer",
@@ -15,7 +16,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <TopBar />
+        <main className="page-content">{children}</main>
+      </body>
     </html>
   );
 }

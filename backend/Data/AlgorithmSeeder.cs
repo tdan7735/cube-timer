@@ -58,7 +58,7 @@ public static class AlgorithmSeeder {
             .Include(s => s.Groups)
             .FirstOrDefaultAsync(s => s.Name == "OLL");
 
-        if (oll?.Groups.Any() == true) {
+        if (oll?.Groups.Count > 0) {
             return;
         }
 

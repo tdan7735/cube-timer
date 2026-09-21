@@ -23,6 +23,6 @@ public class ScrambleService {
             previousFace = face;
         }
 
-        return "";
+        return moves.Aggregate((a, b) => $"{a} {b}");
     }
 }

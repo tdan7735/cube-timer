@@ -4,22 +4,24 @@ import { useState, useEffect, useCallback } from "react";
 import { Timer } from "../components/Timer";
 import { Stats } from "../components/Stats";
 import { SolveList } from "../components/SolveList";
-import { getSolves, getStatistics, createSolve, deleteSolve } from "../lib/api";
+import { getSolves, getStatistics, createSolve, deleteSolve, getScramble } from "../lib/api";
 import type { Solve, Statistics } from "../lib/types";
 import type { Phase } from "../components/Timer";
 import { Penalty } from "../lib/types";
-
-const SCRAMBLE = "R U R' U' R' F R2 U' R' U' R U R' F'";
 
 export default function Home() {
   const [solves, setSolves] = useState<Solve[]>([]);
   const [stats, setStats] = useState<Statistics | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
+  const [scramble, setScramble] = useState<string>("");
 
   const refresh = useCallback(async () => {
     const [s, st] = await Promise.all([getSolves(), getStatistics()]);
     setSolves(s);
     setStats(st);
+    const newScramble = await getScramble();
+    console.log(newScramble);
+    setScramble(newScramble);
   }, []);
 
   useEffect(() => {
@@ -28,9 +30,10 @@ export default function Home() {
 
   const handleSolve = async (timeMs: number, penalty: Penalty) => {
     const tempId = Date.now();
+    console.log(scramble);
     const optimistic: Solve = {
       id: tempId,
-      scramble: SCRAMBLE,
+      scramble: scramble,
       penalty,
       solveTime: timeMs,
       timeSolved: new Date().toISOString(),
@@ -39,7 +42,7 @@ export default function Home() {
 
     try {
       const saved = await createSolve({
-        scramble: SCRAMBLE,
+        scramble: scramble,
         penalty,
         solveTime: timeMs,
       });
@@ -69,7 +72,7 @@ export default function Home() {
   return (
     <div className="app">
       <div className="center">
-        {!timing && <div className="scramble">{SCRAMBLE}</div>}
+        {!timing && <div className="scramble">{scramble}</div>}
         <Timer onSolve={handleSolve} onPhaseChange={setPhase} />
         {!timing && <Stats stats={stats} />}
       </div>

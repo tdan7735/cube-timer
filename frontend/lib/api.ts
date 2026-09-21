@@ -36,3 +36,11 @@ export function deleteSolve(id: number): Promise<void> {
 export function deleteAllSolves(): Promise<void> {
   return request<void>(BASE, { method: "DELETE" });
 }
+
+export async function getScramble(): Promise<string> {
+  const res = await request<string>(`/api/scramble/3x3`);
+
+  console.log(res);
+
+  return res;
+}
