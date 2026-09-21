@@ -1,19 +1,39 @@
-*/.env
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.local
 
-# backend files
+# .NET build, test, and tooling output
+**/bin/
+**/obj/
+**/TestResults/
+**/artifacts/
+**/coverage/
+*.coverage
+*.coveragexml
+*.trx
+*.suo
+*.user
+*.sln.docstates
+*.userosscache
+*.sln.ide
 
-# user specific files
-*/*.suo
-*/*.user
-*/*.sln.docstates
+# Frontend dependencies and generated output
+**/node_modules/
+**/.next/
+**/out/
+**/dist/
+**/dist-ssr/
+**/.turbo/
+**/public/vendor/cubing/
+*.tsbuildinfo
 
-# buildd results
-*/bin/
-*/obj/
-*/debug/
-*/release/
-*/x64/
-
-# MSTest test results
-*/TestResults*/
-*/BuildLog.*
+# Logs and local editor files
+*.log
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
