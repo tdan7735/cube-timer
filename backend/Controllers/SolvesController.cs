@@ -51,6 +51,7 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
             Penalty = penalty,
             SolveTime = solveTime,
             TimeSolved = DateTime.UtcNow,
+            Type = SolveType.Scramble,
         };
 
         context.Solves.Add(solve);
