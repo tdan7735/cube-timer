@@ -27,6 +27,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<AlgorithmCase>()
             .HasIndex(algorithmCase => new { algorithmCase.AlgorithmSetId, algorithmCase.CaseNumber })
             .IsUnique();
+
+        modelBuilder.Entity<Session>()
+            .HasIndex(session => new { session.UserId, session.AlgorithmSetId })
+            .IsUnique()
+            .HasFilter("\"Type\" = 1 AND \"AlgorithmSetId\" IS NOT NULL");
+
+        modelBuilder.Entity<Session>()
+            .ToTable("Sessions", table => table.HasCheckConstraint(
+                "CK_Sessions_TrainingSession_AlgorithmSet",
+                "\"Type\" <> 1 OR \"AlgorithmSetId\" IS NOT NULL"));
     }
 
     public DbSet<AlgorithmSet> AlgorithmSets { get; set; }        // OLL, PLL, etc.

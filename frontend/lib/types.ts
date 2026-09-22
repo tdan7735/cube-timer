@@ -6,12 +6,28 @@ export const Penalty = {
 
 export type Penalty = (typeof Penalty)[keyof typeof Penalty];
 
+export const SessionType = {
+  Solves: 0,
+  AlgorithmTraining: 1,
+} as const;
+
+export type SessionType = (typeof SessionType)[keyof typeof SessionType];
+
+export interface Session {
+  id: number;
+  name: string;
+  type: SessionType;
+  whenMade: string;
+}
+
 export interface Solve {
   id: number;
   scramble: string;
   penalty: Penalty;
   solveTime: number;
   timeSolved: string;
+  algorithmCaseId?: number | null;
+  algorithmCaseName?: string | null;
 }
 
 export function finalTime(solve: Solve): number {
@@ -31,6 +47,33 @@ export interface PostSolveRequest {
   scramble: string;
   penalty: Penalty;
   solveTime: number;
+  sessionId: number;
+}
+
+export interface PostSessionRequest {
+  name?: string;
+  type: SessionType;
+}
+
+export interface TrainingResponse {
+  session: Session;
+  attempts: Solve[];
+  statistics: Statistics;
+}
+
+export interface PostTrainingAttemptRequest {
+  scramble: string;
+  penalty: Penalty;
+  solveTime: number;
+  algorithmCaseId: number;
+}
+
+export interface CaseStatistics {
+  algorithmCaseId: number;
+  algorithmCaseName: string;
+  attemptCount: number;
+  bestTime: number | null;
+  averageTime: number | null;
 }
 
 export interface Algorithm {

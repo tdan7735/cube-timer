@@ -9,4 +9,5 @@ public class AlgorithmSet {
 
     // Used by grouped sets such as OLL.
     public ICollection<AlgorithmGroup> Groups { get; set; } = [];
+    public ICollection<Session> TrainingSessions { get; set; } = [];
 }

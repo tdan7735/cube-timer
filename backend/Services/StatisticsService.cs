@@ -27,7 +27,7 @@ public class StatisticsService {
             }
         }
 
-        return sum / (solves.Count - numDnf);
+        return solves.Count == numDnf ? null : sum / (solves.Count - numDnf);
     }
 
     /**

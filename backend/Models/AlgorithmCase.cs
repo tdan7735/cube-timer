@@ -17,4 +17,5 @@ public class AlgorithmCase {
     public AlgorithmGroup? AlgorithmGroup { get; set; }
 
     public ICollection<Algorithm> Algorithms { get; set; } = [];
+    public ICollection<Solve> Solves { get; set; } = [];
 }

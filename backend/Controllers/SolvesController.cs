@@ -21,11 +21,11 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
         }
 
         var solves = await context.Solves
-            .Where(s => s.Session != null && s.Session.UserId == user.Id)
+            .Where(s => s.Session != null && s.Session.UserId == user.Id && s.Session.Type == SessionType.Solves)
             .OrderByDescending(s => s.TimeSolved)
             .ToListAsync();
 
-        return Ok(solves);
+        return Ok(solves.Select(SolveResponse.From));
     }
 
     [HttpGet("session/{sessionId}")]
@@ -39,7 +39,7 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
         }
 
         var sessionExists = await context.Sessions
-            .AnyAsync(s => s.Id == sessionId && s.UserId == user.Id);
+            .AnyAsync(s => s.Id == sessionId && s.UserId == user.Id && s.Type == SessionType.Solves);
         if (!sessionExists) {
             return NotFound("Session not found");
         }
@@ -49,7 +49,7 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
             .OrderByDescending(s => s.TimeSolved)
             .ToListAsync();
 
-        return Ok(solves);
+        return Ok(solves.Select(SolveResponse.From));
     }
 
     [HttpGet("{id}")]
@@ -63,12 +63,12 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
         }
 
         var solve = await context.Solves
-            .SingleOrDefaultAsync(s => s.Id == id && s.Session != null && s.Session.UserId == user.Id);
+            .SingleOrDefaultAsync(s => s.Id == id && s.Session != null && s.Session.UserId == user.Id && s.Session.Type == SessionType.Solves);
         if (solve == null) {
             return NotFound("User does not own this solve");
         }
 
-        return Ok(solve);
+        return Ok(SolveResponse.From(solve));
     }
 
     [HttpPost]
@@ -93,7 +93,7 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
         }
 
         var session = await context.Sessions
-            .SingleOrDefaultAsync(s => s.Id == req.SessionId && s.UserId == user.Id);
+            .SingleOrDefaultAsync(s => s.Id == req.SessionId && s.UserId == user.Id && s.Type == SessionType.Solves);
         if (session == null) {
             return NotFound("Session not found");
         }
@@ -110,7 +110,10 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
         context.Solves.Add(solve);
         await context.SaveChangesAsync();
 
-        return Created(nameof(GetSolve), solve);
+        return CreatedAtAction(
+            nameof(GetSolve),
+            new { id = solve.Id },
+            SolveResponse.From(solve));
     }
 
     [HttpPut("{id}")]
@@ -124,7 +127,7 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
         }
 
         var solve = await context.Solves
-            .SingleOrDefaultAsync(s => s.Id == id && s.Session != null && s.Session.UserId == user.Id);
+            .SingleOrDefaultAsync(s => s.Id == id && s.Session != null && s.Session.UserId == user.Id && s.Session.Type == SessionType.Solves);
         if (solve == null) {
             return NotFound("User does not own this solve");
         }
@@ -149,7 +152,9 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
         }
 
         context.Solves.RemoveRange(
-                context.Solves.Where(s => s.Session == null || s.Session.UserId == user.Id));
+                context.Solves.Where(s =>
+                    s.Session == null ||
+                    (s.Session.UserId == user.Id && s.Session.Type == SessionType.Solves)));
 
         await context.SaveChangesAsync();
         return Ok();
@@ -166,7 +171,7 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
         }
 
         var solve = await context.Solves
-            .SingleOrDefaultAsync(s => s.Id == id && s.Session != null && s.Session.UserId == user.Id);
+            .SingleOrDefaultAsync(s => s.Id == id && s.Session != null && s.Session.UserId == user.Id && s.Session.Type == SessionType.Solves);
         if (solve == null) {
             return NotFound("User does not own this solve");
         }
@@ -187,7 +192,7 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
         }
 
         var sessionExists = await context.Sessions
-            .AnyAsync(s => s.Id == sessionId && s.UserId == user.Id);
+            .AnyAsync(s => s.Id == sessionId && s.UserId == user.Id && s.Type == SessionType.Solves);
         if (!sessionExists) {
             return NotFound("Session not found");
         }
@@ -223,4 +228,28 @@ public class StatisticsResponse {
     public double? Ao50 { get; set; }
     public double? Ao100 { get; set; }
     public double? PersonalBest { get; set; }
+}
+
+public class SolveResponse {
+    public int Id { get; init; }
+    public required string Scramble { get; init; }
+    public Penalty Penalty { get; init; }
+    public int SolveTime { get; init; }
+    public DateTime TimeSolved { get; init; }
+    public SolveType Type { get; init; }
+    public int? SessionId { get; init; }
+    public int? AlgorithmCaseId { get; init; }
+    public string? AlgorithmCaseName { get; init; }
+
+    public static SolveResponse From(Solve solve) => new() {
+        Id = solve.Id,
+        Scramble = solve.Scramble,
+        Penalty = solve.Penalty,
+        SolveTime = solve.SolveTime,
+        TimeSolved = solve.TimeSolved,
+        Type = solve.Type,
+        SessionId = solve.SessionId,
+        AlgorithmCaseId = solve.AlgorithmCaseId,
+        AlgorithmCaseName = solve.AlgorithmCase?.Name,
+    };
 }

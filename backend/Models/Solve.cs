@@ -21,6 +21,8 @@ public class Solve {
     public required SolveType Type { get; set; }
     public int? SessionId { get; set; }
     public Session? Session { get; set; }
+    public int? AlgorithmCaseId { get; set; }
+    public AlgorithmCase? AlgorithmCase { get; set; }
 
     public int FinalTime() {
         if (Penalty == Penalty.Plus2) {

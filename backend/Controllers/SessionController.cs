@@ -15,8 +15,10 @@ public class SessionController(AppDbContext context) : ControllerBase {
             return NotFound("User not found");
         }
 
-        var sessions = await context.Sessions.Where(s => s.UserId == user.Id).ToListAsync();
-        return Ok(sessions);
+        var sessions = await context.Sessions
+            .Where(session => session.UserId == user.Id && session.Type == SessionType.Solves)
+            .ToListAsync();
+        return Ok(sessions.Select(SessionResponse.From));
     }
 
     [HttpGet("{sessionId}")]
@@ -26,14 +28,16 @@ public class SessionController(AppDbContext context) : ControllerBase {
             return NotFound("User not found");
         }
 
-        var sessions = await context.Sessions.Where(s => s.UserId == user.Id).ToListAsync();
+        var sessions = await context.Sessions
+            .Where(session => session.UserId == user.Id && session.Type == SessionType.Solves)
+            .ToListAsync();
         var session = sessions.FirstOrDefault(s => s.Id == sessionId);
 
         if (session == null) {
             return NotFound("Session not found");
         }
 
-        return Ok(session);
+        return Ok(SessionResponse.From(session));
     }
 
     [HttpPost]
@@ -41,6 +45,10 @@ public class SessionController(AppDbContext context) : ControllerBase {
         var user = await context.Users.Where(u => u.Username == UserSeeder.DefaultUsername).FirstOrDefaultAsync();
         if (user == null) {
             return NotFound("User not found");
+        }
+
+        if (req.Type == SessionType.AlgorithmTraining) {
+            return BadRequest("Create algorithm training sessions through the training endpoint.");
         }
 
         var session = new Session {
@@ -59,17 +67,22 @@ public class SessionController(AppDbContext context) : ControllerBase {
             await context.SaveChangesAsync();
         }
 
-        return Created(nameof(GetSessions), session);
+        return CreatedAtAction(
+            nameof(GetSession),
+            new { sessionId = session.Id },
+            SessionResponse.From(session));
     }
 
-    [HttpPut]
+    [HttpPut("{sessionId}")]
     public async Task<IActionResult> UpdateSession([FromRoute] int sessionId, [FromBody] PostSessionRequest req) {
         var user = await context.Users.Where(u => u.Username == UserSeeder.DefaultUsername).FirstOrDefaultAsync();
         if (user == null) {
             return NotFound("User not found");
         }
 
-        var sessions = await context.Sessions.Where(s => s.UserId == user.Id).ToListAsync();
+        var sessions = await context.Sessions
+            .Where(session => session.UserId == user.Id && session.Type == SessionType.Solves)
+            .ToListAsync();
         var session = sessions.FirstOrDefault(s => s.Id == sessionId);
 
         if (sessions == null) {
@@ -80,6 +93,10 @@ public class SessionController(AppDbContext context) : ControllerBase {
             return NotFound("Session not found");
         }
 
+        if (req.Type != session.Type) {
+            return BadRequest("A session type cannot be changed.");
+        }
+
         session.Name = string.IsNullOrWhiteSpace(req.Name)
             ? session.Id.ToString()
             : req.Name;
@@ -87,7 +104,7 @@ public class SessionController(AppDbContext context) : ControllerBase {
 
         await context.SaveChangesAsync();
 
-        return Ok(session);
+        return Ok(SessionResponse.From(session));
     }
 
     [HttpDelete("{sessionId}")]
@@ -97,7 +114,9 @@ public class SessionController(AppDbContext context) : ControllerBase {
             return NotFound("User not found");
         }
 
-        var sessions = await context.Sessions.Where(s => s.UserId == user.Id).ToListAsync();
+        var sessions = await context.Sessions
+            .Where(session => session.UserId == user.Id && session.Type == SessionType.Solves)
+            .ToListAsync();
         var session = sessions.FirstOrDefault(s => s.Id == sessionId);
 
         if (sessions.Count == 0) {
@@ -121,4 +140,18 @@ public class SessionController(AppDbContext context) : ControllerBase {
 public class PostSessionRequest {
     public string? Name { get; set; }
     public required SessionType Type { get; set; }
+}
+
+public class SessionResponse {
+    public int Id { get; init; }
+    public required string Name { get; init; }
+    public SessionType Type { get; init; }
+    public DateTime WhenMade { get; init; }
+
+    public static SessionResponse From(Session session) => new() {
+        Id = session.Id,
+        Name = session.Name,
+        Type = session.Type,
+        WhenMade = session.WhenMade,
+    };
 }

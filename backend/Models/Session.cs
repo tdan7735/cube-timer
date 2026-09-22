@@ -13,4 +13,6 @@ public class Session {
     public List<Solve> Solves { get; set; } = [];
     public int UserId { get; set; }
     public User User { get; set; } = null!;
+    public int? AlgorithmSetId { get; set; }
+    public AlgorithmSet? AlgorithmSet { get; set; }
 }

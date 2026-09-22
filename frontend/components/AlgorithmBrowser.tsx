@@ -4,8 +4,9 @@ import Link from "next/link";
 import { PllDiagram } from "./PllDiagram";
 import { OllDiagram } from "./OllDiagram";
 import { useEffect, useState } from "react";
-import { getAlgorithmSet, setStandardAlgorithm } from "../lib/api";
-import type { AlgorithmCase, AlgorithmSet } from "../lib/types";
+import { getAlgorithmSet, getCaseStatistics, setStandardAlgorithm } from "../lib/api";
+import type { AlgorithmCase, AlgorithmSet, CaseStatistics } from "../lib/types";
+import { formatTime } from "../lib/format";
 
 function AlgorithmPicker({ item }: { item: AlgorithmCase }) {
   const algorithms = [...item.algorithms].sort((a, b) => a.id - b.id);
@@ -68,12 +69,21 @@ function AlgorithmPicker({ item }: { item: AlgorithmCase }) {
   );
 }
 
-function Cases({ cases, setName }: { cases: AlgorithmCase[]; setName: string }) {
+function CaseStats({ stats }: { stats?: CaseStatistics }) {
+  return (
+    <dl className="flex shrink-0 gap-4 text-right text-xs">
+      <div><dt className="uppercase tracking-[1px] text-cube-dim">Best</dt><dd className="mt-0.5 font-mono text-cube-green">{stats?.bestTime == null ? "—" : formatTime(stats.bestTime)}</dd></div>
+      <div><dt className="uppercase tracking-[1px] text-cube-dim">Avg</dt><dd className="mt-0.5 font-mono">{stats?.averageTime == null ? "—" : formatTime(stats.averageTime)}</dd></div>
+    </dl>
+  );
+}
+
+function Cases({ cases, setName, statistics }: { cases: AlgorithmCase[]; setName: string; statistics: Map<number, CaseStatistics> }) {
   return <>{[...cases].sort((a, b) =>
     (a.caseNumber ?? 0) - (b.caseNumber ?? 0) || a.name.localeCompare(b.name)
   ).map((item) => (
     <section className="mt-6" key={item.id}>
-      <h3 className="mb-3">{item.name}</h3>
+      <div className="mb-3 flex items-end justify-between gap-4"><h3>{item.name}</h3><CaseStats stats={statistics.get(item.id)} /></div>
       <div className="flex items-center gap-6 max-[600px]:flex-col max-[600px]:items-stretch max-[600px]:gap-3">
       {setName === "PLL" && <PllDiagram name={item.name} />}
       {setName === "OLL" && item.caseNumber != null && <OllDiagram caseNumber={item.caseNumber} />}
@@ -89,12 +99,16 @@ function Cases({ cases, setName }: { cases: AlgorithmCase[]; setName: string }) 
 
 export function AlgorithmBrowser({ name }: { name: string }) {
   const [data, setData] = useState<AlgorithmSet | null>(null);
+  const [statistics, setStatistics] = useState<Map<number, CaseStatistics>>(new Map());
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
-    getAlgorithmSet(name, controller.signal).then(setData).catch(() => {
+    Promise.all([getAlgorithmSet(name, controller.signal), getCaseStatistics(name, controller.signal)]).then(([set, caseStatistics]) => {
+      setData(set);
+      setStatistics(new Map(caseStatistics.map((stat) => [stat.algorithmCaseId, stat])));
+    }).catch(() => {
       if (!controller.signal.aborted) setError(`Could not load ${name} algorithms. Please try again.`);
     });
     return () => controller.abort();
@@ -110,10 +124,10 @@ export function AlgorithmBrowser({ name }: { name: string }) {
           {data.groups.map((group) => (
             <section className="mt-8" key={group.id}>
               <h2>{group.name}</h2>
-              <Cases cases={group.cases} setName={name} />
+              <Cases cases={group.cases} setName={name} statistics={statistics} />
             </section>
           ))}
-          <Cases cases={data.cases} setName={name} />
+          <Cases cases={data.cases} setName={name} statistics={statistics} />
           {!data.groups.length && !data.cases.length && <p>No cases available yet.</p>}
         </>
       )}

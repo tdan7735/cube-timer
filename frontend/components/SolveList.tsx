@@ -6,9 +6,10 @@ import { formatTime } from "../lib/format";
 interface SolveListProps {
   solves: Solve[];
   onDelete: (id: number) => void;
+  onEdit: (solve: Solve) => void;
 }
 
-export function SolveList({ solves, onDelete }: SolveListProps) {
+export function SolveList({ solves, onDelete, onEdit }: SolveListProps) {
   if (solves.length === 0) {
     return <p className="p-5 text-center text-sm text-cube-dim">No solves yet</p>;
   }
@@ -24,6 +25,13 @@ export function SolveList({ solves, onDelete }: SolveListProps) {
           {s.penalty === Penalty.DNF && (
             <span className="rounded-[3px] bg-cube-red/12 px-[5px] py-px text-[11px] font-semibold text-cube-red">DNF</span>
           )}
+          <button
+            className="px-1 text-xs text-cube-dim opacity-0 transition-[opacity,color] duration-150 group-hover:opacity-100 hover:text-cube-green"
+            onClick={() => onEdit(s)}
+            title="Edit solve"
+          >
+            Edit
+          </button>
           <button
             className="px-1 text-base leading-none text-cube-dim opacity-0 transition-[opacity,color] duration-150 group-hover:opacity-100 hover:text-cube-red"
             onClick={() => onDelete(s.id)}

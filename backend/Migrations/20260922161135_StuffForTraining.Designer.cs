@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using backend.Data;
@@ -11,9 +12,11 @@ using backend.Data;
 namespace backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class SolveContextModelSnapshot : ModelSnapshot
+    [Migration("20260922161135_StuffForTraining")]
+    partial class StuffForTraining
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -169,9 +172,6 @@ namespace backend.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("AlgorithmCaseId")
-                        .HasColumnType("integer");
-
                     b.Property<int>("Penalty")
                         .HasColumnType("integer");
 
@@ -192,8 +192,6 @@ namespace backend.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AlgorithmCaseId");
 
                     b.HasIndex("SessionId");
 
@@ -278,23 +276,15 @@ namespace backend.Migrations
 
             modelBuilder.Entity("backend.Models.Solve", b =>
                 {
-                    b.HasOne("backend.Models.AlgorithmCase", "AlgorithmCase")
-                        .WithMany("Solves")
-                        .HasForeignKey("AlgorithmCaseId");
-
                     b.HasOne("backend.Models.Session", "Session")
                         .WithMany("Solves")
                         .HasForeignKey("SessionId");
-
-                    b.Navigation("AlgorithmCase");
 
                     b.Navigation("Session");
                 });
 
             modelBuilder.Entity("backend.Models.AlgorithmCase", b =>
                 {
-                    b.Navigation("Solves");
-
                     b.Navigation("Algorithms");
                 });
 

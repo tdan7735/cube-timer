@@ -1,15 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { getAlgorithmSet } from "../lib/api";
+import { createTrainingAttempt, deleteTrainingAttempt, deleteTrainingAttempts, getAlgorithmSet, getTraining } from "../lib/api";
 import { generateCaseScramble, type CaseScramble } from "../lib/caseScramble";
-import type { AlgorithmCase } from "../lib/types";
+import type { AlgorithmCase, Solve, Statistics } from "../lib/types";
 import { Timer, type Phase } from "./Timer";
 import { Penalty } from "../lib/types";
 import { formatTime } from "../lib/format";
 
 const pllCases = ["Aa", "Ab", "E", "F", "Ga", "Gb", "Gc", "Gd", "H", "Ja", "Jb", "Na", "Nb", "Ra", "Rb", "T", "Ua", "Ub", "V", "Y", "Z"];
-type Attempt = { id: number; caseName: string; scramble: string; time: number; penalty: Penalty };
 
 export function AlgorithmTrainer({ name }: { name: string }) {
   const cases = name === "OLL" ? Array.from({ length: 57 }, (_, i) => `OLL ${i + 1}`) : pllCases;
@@ -21,6 +20,10 @@ export function AlgorithmTrainer({ name }: { name: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
+  const [attempts, setAttempts] = useState<Solve[]>([]);
+  const [statistics, setStatistics] = useState<Statistics | null>(null);
+  const [trainingError, setTrainingError] = useState("");
+  const [savingAttempt, setSavingAttempt] = useState(false);
   const requestId = useRef(0);
   const current = history[index];
 
@@ -59,6 +62,17 @@ export function AlgorithmTrainer({ name }: { name: string }) {
     }
   }, [available, selected, index]);
 
+  const refreshTraining = useCallback(async () => {
+    const training = await getTraining(name);
+    setAttempts(training.attempts);
+    setStatistics(training.statistics);
+  }, [name]);
+
+  useEffect(() => {
+    setTrainingError("");
+    void refreshTraining().catch(() => setTrainingError("Could not load saved training attempts."));
+  }, [refreshTraining]);
+
   useEffect(() => {
     // Changing the selection invalidates the old scramble history.
     void nextScramble(true);
@@ -66,15 +80,48 @@ export function AlgorithmTrainer({ name }: { name: string }) {
     // Index changes navigate history and must not reset it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [available, selected]);
-  const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [phase, setPhase] = useState<Phase>("idle");
-  const busy = phase !== "idle";
-  const currentCase = current?.caseName;
+  const busy = phase !== "idle" || savingAttempt;
   const valid = attempts.filter((a) => a.penalty !== Penalty.DNF);
-  const best = valid.length ? Math.min(...valid.map((a) => a.time)) : null;
-  const mean = valid.length ? valid.reduce((sum, a) => sum + a.time, 0) / valid.length : null;
+  const best = statistics?.personalBest ?? null;
+  const mean = statistics?.totalAverage ?? null;
   const latest = attempts[0];
   const display = (value: number | null) => value === null ? "—" : formatTime(value);
+
+  const saveAttempt = async (time: number, penalty: Penalty) => {
+    if (!current || savingAttempt) return;
+    setSavingAttempt(true);
+    setTrainingError("");
+    try {
+      await createTrainingAttempt(name, { scramble: current.scramble, penalty, solveTime: time, algorithmCaseId: current.caseId });
+      await refreshTraining();
+      void nextScramble();
+    } catch {
+      setTrainingError("Could not save this training attempt.");
+    } finally {
+      setSavingAttempt(false);
+    }
+  };
+
+  const removeAttempt = async (id: number) => {
+    setTrainingError("");
+    try {
+      await deleteTrainingAttempt(name, id);
+      await refreshTraining();
+    } catch {
+      setTrainingError("Could not delete this training attempt.");
+    }
+  };
+
+  const clearAttempts = async () => {
+    setTrainingError("");
+    try {
+      await deleteTrainingAttempts(name);
+      await refreshTraining();
+    } catch {
+      setTrainingError("Could not reset this training session.");
+    }
+  };
 
   return (
     <section className="px-4 pt-6 pb-8 [padding-inline:clamp(16px,3vw,48px)]" aria-label={`${name} trainer`}>
@@ -85,7 +132,8 @@ export function AlgorithmTrainer({ name }: { name: string }) {
           <button className="cursor-pointer border-0 bg-transparent px-2 text-3xl text-cube-text disabled:cursor-default disabled:opacity-40" aria-label="Next scramble" disabled={busy || loading || !selected.length} onClick={() => index < history.length - 1 ? setIndex(index + 1) : void nextScramble()}>›</button>
         </div>
         {error && <p role="alert" className="p-4 text-[13px] leading-relaxed text-[#999]">{error} <button className="cursor-pointer rounded border border-[#444] bg-transparent px-3 py-2 text-cube-text hover:border-cube-green" onClick={() => available.length ? void nextScramble(true) : setRetry((n) => n + 1)}>Retry</button></p>}
-        <p className="p-4 text-[13px] leading-relaxed text-[#999]">Only cases with saved algorithms are available. Practice times stay in this tab.</p>
+        <p className="p-4 text-[13px] leading-relaxed text-[#999]">Only cases with saved algorithms are available. Practice times are saved to your {name} training session.</p>
+        {trainingError && <p role="alert" className="px-4 pb-4 text-[13px] leading-relaxed text-cube-red">{trainingError}</p>}
         <div className="grid min-h-[min(650px,70vh)] grid-cols-1 lg:grid-cols-[minmax(0,1fr)_230px_230px]">
           <div className="relative flex min-w-0 flex-col items-center border-b border-[#383838] p-5 lg:col-span-1 lg:border-b-0">
             <button className="cursor-pointer border border-transparent bg-transparent px-3 py-2 text-sm text-cube-green disabled:cursor-default disabled:opacity-40" disabled={busy} aria-expanded={selecting} aria-controls="trainer-case-selection"
@@ -104,28 +152,23 @@ export function AlgorithmTrainer({ name }: { name: string }) {
               ))}</div>
             </div>}
             <div className="flex min-h-[320px] flex-1 flex-col items-center justify-center gap-6">
-              <Timer disabled={selecting || loading || !!error || !current || !selected.includes(current.caseName)} onPhaseChange={setPhase} onSolve={(time, penalty) => {
-                if (!current) return;
-                setAttempts((previous) => [{ id: Date.now(), caseName: current.caseName, scramble: current.scramble, time, penalty }, ...previous]);
-                void nextScramble();
-              }} />
-              {!busy && <p className="text-[13px] text-[#999]">Practice case · {currentCase ?? "None selected"}</p>}
+              <Timer disabled={selecting || loading || !!error || !current || savingAttempt || !selected.includes(current.caseName)} onPhaseChange={setPhase} onSolve={(time, penalty) => void saveAttempt(time, penalty)} />
             </div>
           </div>
           <aside className="border-l border-[#383838] bg-[#151515] px-[18px] py-6" aria-label="Practice attempts">
             <h2 className="text-sm font-medium">Attempts <span className="float-right text-[#999]">{attempts.length}</span></h2>
             {!attempts.length ? <p className="mt-8 text-center text-[13px] leading-relaxed text-[#888]">Your practice times will appear here.</p> : <ol className="mt-5 max-h-[510px] list-none overflow-y-auto">
               {attempts.map((attempt) => <li className="flex items-center gap-2 border-b border-cube-border py-2.5 text-[13px]" key={attempt.id}>
-                <span className="flex-1 text-[#aaa]">{attempt.caseName}</span>
-                <strong className="font-mono font-normal">{attempt.penalty === Penalty.DNF ? "DNF" : formatTime(attempt.time)}</strong>
-                <button className="cursor-pointer border-0 bg-transparent px-1.5 py-0.5 text-cube-text disabled:cursor-default disabled:opacity-40" aria-label={`Delete ${attempt.caseName} attempt`} disabled={busy}
-                  onClick={() => setAttempts((previous) => previous.filter((a) => a.id !== attempt.id))}>×</button>
+                <span className="flex-1 text-[#aaa]" title={attempt.scramble}>{attempt.algorithmCaseName ?? `${name} practice`}</span>
+                <strong className="font-mono font-normal">{attempt.penalty === Penalty.DNF ? "DNF" : formatTime(attempt.solveTime)}</strong>
+                <button className="cursor-pointer border-0 bg-transparent px-1.5 py-0.5 text-cube-text disabled:cursor-default disabled:opacity-40" aria-label="Delete training attempt" disabled={busy}
+                  onClick={() => void removeAttempt(attempt.id)}>×</button>
               </li>)}
             </ol>}
           </aside>
           <aside className="border-l border-[#383838] bg-[#151515] px-[18px] py-6" aria-label="Training statistics">
-            <div className="flex items-center justify-between"><h2 className="text-sm font-medium">Session</h2><button className="cursor-pointer rounded border border-[#444] bg-transparent px-3 py-2 text-cube-text disabled:cursor-default disabled:opacity-40" disabled={busy || !attempts.length} onClick={() => setAttempts([])} aria-label="Reset practice times">↻</button></div>
-            <div className="my-7 grid grid-cols-2 gap-3"><div><span className="mb-2 block text-xs text-[#999]">Current</span><strong className="font-mono text-2xl font-normal">{latest ? latest.penalty === Penalty.DNF ? "DNF" : formatTime(latest.time) : "—"}</strong></div><div><span className="mb-2 block text-xs text-[#999]">Best</span><strong className="font-mono text-2xl font-normal text-cube-green">{display(best)}</strong></div></div>
+            <div className="flex items-center justify-between"><h2 className="text-sm font-medium">Session</h2><button className="cursor-pointer rounded border border-[#444] bg-transparent px-3 py-2 text-cube-text disabled:cursor-default disabled:opacity-40" disabled={busy || !attempts.length} onClick={() => void clearAttempts()} aria-label="Reset practice times">↻</button></div>
+            <div className="my-7 grid grid-cols-2 gap-3"><div><span className="mb-2 block text-xs text-[#999]">Current</span><strong className="font-mono text-2xl font-normal">{latest ? latest.penalty === Penalty.DNF ? "DNF" : formatTime(latest.solveTime) : "—"}</strong></div><div><span className="mb-2 block text-xs text-[#999]">Best</span><strong className="font-mono text-2xl font-normal text-cube-green">{display(best)}</strong></div></div>
             <dl className="mb-5"><div className="flex justify-between border-b border-cube-border py-2.5 text-sm"><dt className="text-[#aaa]">Solves</dt><dd className="font-mono">{attempts.length}</dd></div><div className="flex justify-between border-b border-cube-border py-2.5 text-sm"><dt className="text-[#aaa]">Mean</dt><dd className="font-mono">{display(mean)}</dd></div><div className="flex justify-between border-b border-cube-border py-2.5 text-sm"><dt className="text-[#aaa]">DNFs</dt><dd className="font-mono">{attempts.length - valid.length}</dd></div></dl>
             <p className="text-[13px] leading-relaxed text-[#999]">Mean and best exclude DNFs.</p>
             <div className="mt-10 text-xs leading-loose text-[#888]"><p>Hold space to get ready</p><p>Release to start</p><p>Space to stop · Esc for DNF</p></div>
