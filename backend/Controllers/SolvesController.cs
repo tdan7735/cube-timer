@@ -51,6 +51,7 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
             Scramble = scramble,
             Penalty = penalty,
             SolveTime = solveTime,
+            SessionId = SessionId,
             TimeSolved = DateTime.UtcNow,
             Type = SolveType.Scramble,
         };

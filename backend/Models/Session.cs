@@ -6,7 +6,7 @@ public enum SessionType {
 }
 
 public class Session {
-    public required int Id { get; set; }
+    public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public SessionType Type { get; set; }
     public DateTime WhenMade { get; set; }
