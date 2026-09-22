@@ -43,7 +43,6 @@ public class SessionController(AppDbContext context) : ControllerBase {
             return NotFound("User not found");
         }
 
-        // if name is null or empty, the session id will be used as the name
         var session = new Session {
             Name = req.Name ?? string.Empty,
             Type = req.Type,

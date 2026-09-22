@@ -11,8 +11,41 @@ namespace backend.Controllers;
 public class SolvesController(AppDbContext context, StatisticsService statistics) : ControllerBase {
 
     [HttpGet]
-    public async Task<IActionResult> GetSolves() {
+    public async Task<IActionResult> GetAllSolves() {
+        var user = await context
+            .Users
+            .Where(u => u.Username == UserSeeder.DefaultUsername)
+            .FirstOrDefaultAsync();
+        if (user == null) {
+            return NotFound("User not found");
+        }
+
         var solves = await context.Solves
+            .Where(s => s.Session != null && s.Session.UserId == user.Id)
+            .OrderByDescending(s => s.TimeSolved)
+            .ToListAsync();
+
+        return Ok(solves);
+    }
+
+    [HttpGet("session/{sessionId}")]
+    public async Task<IActionResult> GetSolves([FromRoute] int sessionId) {
+        var user = await context
+            .Users
+            .Where(u => u.Username == UserSeeder.DefaultUsername)
+            .FirstOrDefaultAsync();
+        if (user == null) {
+            return NotFound("User not found");
+        }
+
+        var sessionExists = await context.Sessions
+            .AnyAsync(s => s.Id == sessionId && s.UserId == user.Id);
+        if (!sessionExists) {
+            return NotFound("Session not found");
+        }
+
+        var solves = await context.Solves
+            .Where(s => s.SessionId == sessionId)
             .OrderByDescending(s => s.TimeSolved)
             .ToListAsync();
 
@@ -21,10 +54,18 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetSolve([FromRoute] int id) {
-        var solve = await context.Solves.FindAsync(id);
+        var user = await context
+                .Users
+                .Where(u => u.Username == UserSeeder.DefaultUsername)
+                .FirstOrDefaultAsync();
+        if (user == null) {
+            return NotFound("User not found");
+        }
 
+        var solve = await context.Solves
+            .SingleOrDefaultAsync(s => s.Id == id && s.Session != null && s.Session.UserId == user.Id);
         if (solve == null) {
-            return NotFound();
+            return NotFound("User does not own this solve");
         }
 
         return Ok(solve);
@@ -32,11 +73,17 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
 
     [HttpPost]
     public async Task<IActionResult> PostSolve([FromBody] PostSolveRequest req) {
+        var user = await context
+            .Users
+            .Where(u => u.Username == UserSeeder.DefaultUsername)
+            .FirstOrDefaultAsync();
+        if (user == null) {
+            return NotFound("User not found");
+        }
+
         string scramble = req.Scramble;
         Penalty penalty = req.Penalty;
         int solveTime = req.SolveTime;
-        int SessionId = req.SessionId;
-
         if (scramble.Length == 0) {
             return BadRequest("Scramble must have a length greater than 0");
         }
@@ -45,7 +92,8 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
             return BadRequest("Solve time cannot be negative");
         }
 
-        var session =context.Sessions.FirstOrDefault(s => s.Id == SessionId);
+        var session = await context.Sessions
+            .SingleOrDefaultAsync(s => s.Id == req.SessionId && s.UserId == user.Id);
         if (session == null) {
             return NotFound("Session not found");
         }
@@ -54,7 +102,7 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
             Scramble = scramble,
             Penalty = penalty,
             SolveTime = solveTime,
-            SessionId = SessionId,
+            SessionId = session.Id,
             TimeSolved = DateTime.UtcNow,
             Type = SolveType.Scramble,
         };
@@ -67,10 +115,18 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateSolve([FromRoute] int id, [FromBody] PostSolveRequest req) {
-        var solve = await context.Solves.FindAsync(id);
+        var user = await context
+            .Users
+            .Where(u => u.Username == UserSeeder.DefaultUsername)
+            .FirstOrDefaultAsync();
+        if (user == null) {
+            return NotFound("User not found");
+        }
 
+        var solve = await context.Solves
+            .SingleOrDefaultAsync(s => s.Id == id && s.Session != null && s.Session.UserId == user.Id);
         if (solve == null) {
-            return NotFound();
+            return NotFound("User does not own this solve");
         }
 
         solve.Scramble = req.Scramble;
@@ -84,17 +140,35 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
 
     [HttpDelete]
     public async Task<IActionResult> DeleteAllSolves() {
-        context.Solves.RemoveRange(context.Solves);
+        var user = await context
+            .Users
+            .Where(u => u.Username == UserSeeder.DefaultUsername)
+            .FirstOrDefaultAsync();
+        if (user == null) {
+            return NotFound("User not found");
+        }
+
+        context.Solves.RemoveRange(
+                context.Solves.Where(s => s.Session == null || s.Session.UserId == user.Id));
+
         await context.SaveChangesAsync();
         return Ok();
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteSolve([FromRoute] int id) {
-        var solve = await context.Solves.FindAsync(id);
+        var user = await context
+            .Users
+            .Where(u => u.Username == UserSeeder.DefaultUsername)
+            .FirstOrDefaultAsync();
+        if (user == null) {
+            return NotFound("User not found");
+        }
 
+        var solve = await context.Solves
+            .SingleOrDefaultAsync(s => s.Id == id && s.Session != null && s.Session.UserId == user.Id);
         if (solve == null) {
-            return NotFound();
+            return NotFound("User does not own this solve");
         }
 
         context.Solves.Remove(solve);
@@ -104,7 +178,23 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
 
     [HttpGet("statistics/{sessionId}")]
     public async Task<IActionResult> GetStatistics([FromRoute] int sessionId) {
-        var solves = await context.Solves.Where(s => s.SessionId == sessionId).ToListAsync();
+        var user = await context
+            .Users
+            .Where(u => u.Username == UserSeeder.DefaultUsername)
+            .FirstOrDefaultAsync();
+        if (user == null) {
+            return NotFound("User not found");
+        }
+
+        var sessionExists = await context.Sessions
+            .AnyAsync(s => s.Id == sessionId && s.UserId == user.Id);
+        if (!sessionExists) {
+            return NotFound("Session not found");
+        }
+
+        var solves = await context.Solves
+            .Where(s => s.SessionId == sessionId)
+            .ToListAsync();
 
         var response = new StatisticsResponse {
             TotalAverage = statistics.CalculateTotalAverage(solves),
