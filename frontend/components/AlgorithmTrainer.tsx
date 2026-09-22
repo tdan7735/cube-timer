@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createTrainingAttempt, deleteTrainingAttempt, deleteTrainingAttempts, getAlgorithmSet, getTraining } from "../lib/api";
 import { generateCaseScramble, type CaseScramble } from "../lib/caseScramble";
-import type { AlgorithmCase, Solve, Statistics } from "../lib/types";
+import type { AlgorithmCase, Solve } from "../lib/types";
 import { Timer, type Phase } from "./Timer";
 import { Penalty } from "../lib/types";
 import { formatTime } from "../lib/format";
@@ -21,7 +21,6 @@ export function AlgorithmTrainer({ name }: { name: string }) {
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
   const [attempts, setAttempts] = useState<Solve[]>([]);
-  const [statistics, setStatistics] = useState<Statistics | null>(null);
   const [trainingError, setTrainingError] = useState("");
   const [savingAttempt, setSavingAttempt] = useState(false);
   const requestId = useRef(0);
@@ -65,7 +64,6 @@ export function AlgorithmTrainer({ name }: { name: string }) {
   const refreshTraining = useCallback(async () => {
     const training = await getTraining(name);
     setAttempts(training.attempts);
-    setStatistics(training.statistics);
   }, [name]);
 
   useEffect(() => {
@@ -83,20 +81,39 @@ export function AlgorithmTrainer({ name }: { name: string }) {
   const [phase, setPhase] = useState<Phase>("idle");
   const busy = phase !== "idle" || savingAttempt;
   const valid = attempts.filter((a) => a.penalty !== Penalty.DNF);
-  const best = statistics?.personalBest ?? null;
-  const mean = statistics?.totalAverage ?? null;
+  const best = valid.length ? Math.min(...valid.map((attempt) => attempt.solveTime + (attempt.penalty === Penalty.Plus2 ? 2000 : 0))) : null;
+  const mean = valid.length ? valid.reduce((total, attempt) => total + attempt.solveTime + (attempt.penalty === Penalty.Plus2 ? 2000 : 0), 0) / valid.length : null;
   const latest = attempts[0];
   const display = (value: number | null) => value === null ? "—" : formatTime(value);
 
   const saveAttempt = async (time: number, penalty: Penalty) => {
     if (!current || savingAttempt) return;
+    const temporaryId = -Date.now();
+    const optimisticAttempt: Solve = {
+      id: temporaryId,
+      scramble: current.scramble,
+      penalty,
+      solveTime: time,
+      timeSolved: new Date().toISOString(),
+      algorithmCaseId: current.caseId,
+      algorithmCaseName: current.caseName,
+    };
     setSavingAttempt(true);
     setTrainingError("");
+    // Show the result and start calculating the next case immediately. The
+    // server response replaces this temporary attempt once it is persisted.
+    setAttempts((previous) => [optimisticAttempt, ...previous]);
+    void nextScramble();
     try {
-      await createTrainingAttempt(name, { scramble: current.scramble, penalty, solveTime: time, algorithmCaseId: current.caseId });
-      await refreshTraining();
-      void nextScramble();
+      const savedAttempt = await createTrainingAttempt(name, {
+        scramble: current.scramble,
+        penalty,
+        solveTime: time,
+        algorithmCaseId: current.caseId,
+      });
+      setAttempts((previous) => previous.map((attempt) => attempt.id === temporaryId ? savedAttempt : attempt));
     } catch {
+      setAttempts((previous) => previous.filter((attempt) => attempt.id !== temporaryId));
       setTrainingError("Could not save this training attempt.");
     } finally {
       setSavingAttempt(false);
