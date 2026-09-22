@@ -35,6 +35,7 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
         string scramble = req.Scramble;
         Penalty penalty = req.Penalty;
         int solveTime = req.SolveTime;
+        int SessionId = req.SessionId;
 
         if (scramble.Length == 0) {
             Console.WriteLine("Scramble cannot be an empty string");
@@ -97,9 +98,9 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
         return Ok();
     }
 
-    [HttpGet("statistics")]
-    public async Task<IActionResult> GetStatistics() {
-        var solves = await context.Solves.ToListAsync();
+    [HttpGet("statistics/{sessionId}")]
+    public async Task<IActionResult> GetStatistics([FromRoute] int sessionId) {
+        var solves = await context.Solves.Where(s => s.SessionId == sessionId).ToListAsync();
 
         var response = new StatisticsResponse {
             TotalAverage = statistics.CalculateTotalAverage(solves),
@@ -118,6 +119,7 @@ public class PostSolveRequest {
     public required string Scramble { get; set; } = "";
     public required Penalty Penalty { get; set; }
     public required int SolveTime { get; set; }
+    public required int SessionId { get; set; }
 }
 
 public class StatisticsResponse {

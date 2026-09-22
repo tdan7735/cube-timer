@@ -1,13 +1,13 @@
 namespace backend.Models;
 
 public enum SessionType {
-    Solve,
-    PLLTraining,
-    OLLTraining,
+    Solves,
+    AlgorithmTraining,
 }
 
 public class Session {
     public required int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
     public SessionType Type { get; set; }
     public DateTime WhenMade { get; set; }
     public List<Solve> Solves { get; set; } = [];
