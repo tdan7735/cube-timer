@@ -38,13 +38,16 @@ public class SolvesController(AppDbContext context, StatisticsService statistics
         int SessionId = req.SessionId;
 
         if (scramble.Length == 0) {
-            Console.WriteLine("Scramble cannot be an empty string");
-            return BadRequest();
+            return BadRequest("Scramble must have a length greater than 0");
         }
 
         if (solveTime < 0) {
-            Console.WriteLine("Solve time cannot be negative");
-            return BadRequest();
+            return BadRequest("Solve time cannot be negative");
+        }
+
+        var session =context.Sessions.FirstOrDefault(s => s.Id == SessionId);
+        if (session == null) {
+            return NotFound("Session not found");
         }
 
         var solve = new Solve {
