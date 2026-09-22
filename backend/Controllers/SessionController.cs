@@ -43,16 +43,9 @@ public class SessionController(AppDbContext context) : ControllerBase {
             return NotFound("User not found");
         }
 
-        if (req.Name == null) {
-            req.Name = "the new session id, figure out how to get that later idk";
-        }
-
-        if (req.Name.Trim().Length == 0) {
-            req.Name = null;
-        }
-
+        // if name is null or empty, the session id will be used as the name
         var session = new Session {
-            Name = req.Name,
+            Name = req.Name ?? string.Empty,
             Type = req.Type,
             UserId = user.Id,
             WhenMade = DateTime.UtcNow,
@@ -61,6 +54,11 @@ public class SessionController(AppDbContext context) : ControllerBase {
 
         context.Sessions.Add(session);
         await context.SaveChangesAsync();
+
+        if (string.IsNullOrWhiteSpace(req.Name)) {
+            session.Name = session.Id.ToString();
+            await context.SaveChangesAsync();
+        }
 
         return Created(nameof(GetSessions), session);
     }
@@ -83,11 +81,9 @@ public class SessionController(AppDbContext context) : ControllerBase {
             return NotFound("Session not found");
         }
 
-        if (req.Name == null) {
-            session.Name = "the new session id, figure out how to get that later idk";
-        }
-
-        session.Name = req.Name;
+        session.Name = string.IsNullOrWhiteSpace(req.Name)
+            ? session.Id.ToString()
+            : req.Name;
         session.Type = req.Type;
 
         await context.SaveChangesAsync();
@@ -124,6 +120,6 @@ public class SessionController(AppDbContext context) : ControllerBase {
 }
 
 public class PostSessionRequest {
-    public required string? Name { get; set; } = "";
+    public string? Name { get; set; }
     public required SessionType Type { get; set; }
 }
