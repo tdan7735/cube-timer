@@ -7,11 +7,15 @@ PostgreSQL installation.
 ## First-time setup
 
 1. Enable Docker Desktop's WSL integration for the distribution that runs this project.
-2. From the repository root, start PostgreSQL:
+2. From the repository root, start PostgreSQL and its pgweb database browser:
 
    ```bash
-   docker compose up -d database
+   docker compose up -d database pgweb
    ```
+
+   Open pgweb at [http://localhost:8081](http://localhost:8081). It connects to
+   the local database automatically, so there is no login or connection form to
+   fill in.
 
 3. Apply the EF Core schema from the `backend` directory. This explicitly targets the local container rather than the Supabase connection stored in user secrets:
 
@@ -39,12 +43,22 @@ The normal frontend development command continues to proxy API calls to `http://
 ## Daily use
 
 ```bash
-docker compose up -d database
+docker compose up -d database pgweb
 cd backend && dotnet run --launch-profile local
 ```
+
+Browse or edit the local database at [http://localhost:8081](http://localhost:8081).
+To use a different browser port, set `LOCAL_PGWEB_PORT` before starting the
+containers.
 
 To stop the database without deleting data:
 
 ```bash
 docker compose stop database
+```
+
+To stop both PostgreSQL and pgweb:
+
+```bash
+docker compose stop database pgweb
 ```

@@ -110,6 +110,7 @@ function Cases({ cases, setName, statistics, statuses, onCycleStatus }: { cases:
 
 export function AlgorithmBrowser({ name }: { name: string }) {
   const [data, setData] = useState<AlgorithmSet | null>(null);
+  const [groupFilter, setGroupFilter] = useState<"all" | "ungrouped" | number>("all");
   const [statistics, setStatistics] = useState<Map<number, CaseStatistics>>(new Map());
   const [statuses, setStatuses] = useState<Map<number, LearningStatus>>(new Map());
   const [error, setError] = useState("");
@@ -149,13 +150,29 @@ export function AlgorithmBrowser({ name }: { name: string }) {
         <p>{error}</p><button className="mt-2 cursor-pointer rounded-md border border-[#444] bg-cube-surface px-5 py-2.5 text-[15px] hover:border-cube-green" onClick={() => { setError(""); setAttempt(attempt + 1); }}>Retry</button>
       </div> : !data ? <p role="status">Loading algorithms…</p> : (
         <>
-          {data.groups.map((group) => (
+          {!!data.groups.length && <nav className="rounded-lg border border-cube-border bg-cube-surface p-3" aria-label="Algorithm groups">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-2">
+              <button type="button" aria-pressed={groupFilter === "all"} onClick={() => setGroupFilter("all")}
+                className={`flex cursor-pointer items-center justify-between gap-3 rounded-md border px-4 py-2 text-left text-sm transition-colors ${groupFilter === "all" ? "border-cube-green bg-cube-green/12 text-cube-green" : "border-[#444] bg-cube-bg text-[#aaa] hover:border-[#666] hover:text-cube-text"}`}>
+                <span>All groups</span><span className="text-xs opacity-70">{data.groups.reduce((total, group) => total + group.cases.length, data.cases.length)}</span>
+              </button>
+              {data.groups.map((group) => <button type="button" key={group.id} aria-pressed={groupFilter === group.id} onClick={() => setGroupFilter(group.id)}
+                className={`flex cursor-pointer items-center justify-between gap-3 rounded-md border px-4 py-2 text-left text-sm transition-colors ${groupFilter === group.id ? "border-cube-green bg-cube-green/12 text-cube-green" : "border-[#444] bg-cube-bg text-[#aaa] hover:border-[#666] hover:text-cube-text"}`}>
+                <span>{group.name}</span><span className="text-xs opacity-70">{group.cases.length}</span>
+              </button>)}
+              {!!data.cases.length && <button type="button" aria-pressed={groupFilter === "ungrouped"} onClick={() => setGroupFilter("ungrouped")}
+                className={`flex cursor-pointer items-center justify-between gap-3 rounded-md border px-4 py-2 text-left text-sm transition-colors ${groupFilter === "ungrouped" ? "border-cube-green bg-cube-green/12 text-cube-green" : "border-[#444] bg-cube-bg text-[#aaa] hover:border-[#666] hover:text-cube-text"}`}>
+                <span>Other</span><span className="text-xs opacity-70">{data.cases.length}</span>
+              </button>}
+            </div>
+          </nav>}
+          {data.groups.filter((group) => groupFilter === "all" || groupFilter === group.id).map((group) => (
             <section className="mt-8" key={group.id}>
               <h2>{group.name}</h2>
               <Cases cases={group.cases} setName={name} statistics={statistics} statuses={statuses} onCycleStatus={(item) => void cycleStatus(item)} />
             </section>
           ))}
-          <Cases cases={data.cases} setName={name} statistics={statistics} statuses={statuses} onCycleStatus={(item) => void cycleStatus(item)} />
+          {(groupFilter === "all" || groupFilter === "ungrouped") && <Cases cases={data.cases} setName={name} statistics={statistics} statuses={statuses} onCycleStatus={(item) => void cycleStatus(item)} />}
           {!data.groups.length && !data.cases.length && <p>No cases available yet.</p>}
         </>
       )}

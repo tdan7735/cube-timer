@@ -15,5 +15,15 @@ services:
       timeout: 5s
       retries: 10
 
+  pgweb:
+    image: sosedoff/pgweb:latest
+    environment:
+      PGWEB_DATABASE_URL: "postgres://${LOCAL_POSTGRES_USER:-cube_timer}:${LOCAL_POSTGRES_PASSWORD:-cube_timer_dev}@database:5432/${LOCAL_POSTGRES_DB:-cube_timer}?sslmode=disable"
+    ports:
+      - "${LOCAL_PGWEB_PORT:-8081}:8081"
+    depends_on:
+      database:
+        condition: service_healthy
+
 volumes:
   cube_timer_postgres:

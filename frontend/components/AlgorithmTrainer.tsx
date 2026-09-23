@@ -22,6 +22,7 @@ export function AlgorithmTrainer({ name }: { name: string }) {
   const [index, setIndex] = useState(0);
   const [available, setAvailable] = useState<AlgorithmCase[]>([]);
   const [statuses, setStatuses] = useState<Map<number, LearningStatus>>(new Map());
+  const [statusShortcuts, setStatusShortcuts] = useState<LearningStatus[]>([]);
   const [caseStatistics, setCaseStatistics] = useState<Map<number, CaseStatistics>>(new Map());
   const [preferences, setPreferences] = useState<TrainingPreferences>({ includeNotLearned: true, includeLearning: true, includeLearned: true, focus: TrainingFocus.All, slowestCount: 10, order: TrainingOrder.Balanced, selectedCaseIds: null });
   const [history, setHistory] = useState<CaseScramble[]>([]);
@@ -42,9 +43,18 @@ export function AlgorithmTrainer({ name }: { name: string }) {
     Promise.all([getAlgorithmSet(name, controller.signal), getTrainingConfiguration(name, controller.signal), getCaseStatistics(name, controller.signal)]).then(([set, configuration, statistics]) => {
       const byId = new Map([...set.cases, ...set.groups.flatMap((g) => g.cases)].map((c) => [c.id, c]));
       const usable = [...byId.values()].filter((c) => c.algorithms.some((a) => a.moves.trim()));
+      const loadedStatuses = new Map(configuration.statuses.map((item) => [item.algorithmCaseId, item.status]));
+      const selectedCases = usable.filter((item) => configuration.preferences.selectedCaseIds === null || configuration.preferences.selectedCaseIds.includes(item.id));
       setAvailable(usable);
-      setSelected(usable.filter((item) => configuration.preferences.selectedCaseIds === null || configuration.preferences.selectedCaseIds.includes(item.id)).map((c) => c.name));
-      setStatuses(new Map(configuration.statuses.map((item) => [item.algorithmCaseId, item.status])));
+      setSelected(selectedCases.map((c) => c.name));
+      setStatuses(loadedStatuses);
+      const includedStatuses = [
+        configuration.preferences.includeNotLearned && LearningStatus.NotLearned,
+        configuration.preferences.includeLearning && LearningStatus.Learning,
+        configuration.preferences.includeLearned && LearningStatus.Learned,
+      ].filter((status): status is LearningStatus => status !== false);
+      const casesWithIncludedStatuses = usable.filter((item) => includedStatuses.includes(loadedStatuses.get(item.id) ?? LearningStatus.NotLearned));
+      setStatusShortcuts(selectedCases.length === casesWithIncludedStatuses.length && selectedCases.every((item) => casesWithIncludedStatuses.some((candidate) => candidate.id === item.id)) ? includedStatuses : []);
       setPreferences(configuration.preferences);
       setCaseStatistics(new Map(statistics.map((item) => [item.algorithmCaseId, item])));
       setLoading(false);
@@ -140,9 +150,42 @@ export function AlgorithmTrainer({ name }: { name: string }) {
     void saveTrainingPreferences(name, updated).catch(() => setTrainingError("Could not save training filters."));
   };
 
+  const statusPreferenceChanges = (selectedNames: string[]): Pick<TrainingPreferences, "includeNotLearned" | "includeLearning" | "includeLearned"> => {
+    const selectedStatuses = new Set(available
+      .filter((item) => selectedNames.includes(item.name))
+      .map((item) => statuses.get(item.id) ?? LearningStatus.NotLearned));
+    return {
+      includeNotLearned: selectedStatuses.has(LearningStatus.NotLearned),
+      includeLearning: selectedStatuses.has(LearningStatus.Learning),
+      includeLearned: selectedStatuses.has(LearningStatus.Learned),
+    };
+  };
+
+  const updateStatusShortcut = (status: LearningStatus, checked: boolean) => {
+    const nextStatuses = checked
+      ? [...statusShortcuts, status]
+      : statusShortcuts.filter((item) => item !== status);
+    const matchingNames = available
+      .filter((item) => nextStatuses.includes(statuses.get(item.id) ?? LearningStatus.NotLearned))
+      .map((item) => item.name);
+    setStatusShortcuts(nextStatuses);
+    setSelected(matchingNames);
+    updatePreferences({
+      includeNotLearned: nextStatuses.includes(LearningStatus.NotLearned),
+      includeLearning: nextStatuses.includes(LearningStatus.Learning),
+      includeLearned: nextStatuses.includes(LearningStatus.Learned),
+      selectedCaseIds: available.filter((item) => matchingNames.includes(item.name)).map((item) => item.id),
+    });
+    setIndex(0);
+  };
+
   const updateSelected = (names: string[]) => {
+    setStatusShortcuts([]);
     setSelected(names);
-    updatePreferences({ selectedCaseIds: available.filter((item) => names.includes(item.name)).map((item) => item.id) });
+    updatePreferences({
+      ...statusPreferenceChanges(names),
+      selectedCaseIds: available.filter((item) => names.includes(item.name)).map((item) => item.id),
+    });
   };
 
   const updateStatus = async (item: AlgorithmCase, status: LearningStatus) => {
@@ -238,14 +281,14 @@ export function AlgorithmTrainer({ name }: { name: string }) {
             {selecting && <div className="mt-3 w-full rounded-md border border-[#444] bg-cube-surface p-4" id="trainer-case-selection">
               <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <fieldset className="rounded border border-[#383838] p-3"><legend className="px-1 text-xs text-[#999]">Statuses</legend>
-                  {([["Not learned", "includeNotLearned"], ["Learning", "includeLearning"], ["Learned", "includeLearned"]] as const).map(([label, key]) => <label className="mr-4 inline-flex items-center gap-2 text-[13px]" key={key}><input className="accent-cube-green" type="checkbox" checked={preferences[key]} onChange={(event) => updatePreferences({ [key]: event.target.checked })} />{label}</label>)}
+                  {([["Not learned", LearningStatus.NotLearned], ["Learning", LearningStatus.Learning], ["Learned", LearningStatus.Learned]] as const).map(([label, status]) => <label className="mr-4 inline-flex items-center gap-2 text-[13px]" key={status}><input className="accent-cube-green" type="checkbox" checked={statusShortcuts.includes(status)} onChange={(event) => updateStatusShortcut(status, event.target.checked)} />{label}</label>)}
                 </fieldset>
                 <label className="text-xs text-[#999]">Focus<select className="mt-1 block w-full rounded border border-[#444] bg-[#151515] p-2 text-cube-text" value={preferences.focus} onChange={(event) => updatePreferences({ focus: Number(event.target.value) as TrainingFocus })}><option value={TrainingFocus.All}>All eligible</option><option value={TrainingFocus.Slowest}>Slowest</option></select></label>
                 <label className="text-xs text-[#999]">Order<select className="mt-1 block w-full rounded border border-[#444] bg-[#151515] p-2 text-cube-text" value={preferences.order} onChange={(event) => updatePreferences({ order: Number(event.target.value) as TrainingOrder })}><option value={TrainingOrder.Balanced}>Balanced</option><option value={TrainingOrder.Random}>Random</option></select></label>
                 {preferences.focus === TrainingFocus.Slowest && <label className="text-xs text-[#999]">Number of slowest cases<input className="mt-1 block w-full rounded border border-[#444] bg-[#151515] p-2 text-cube-text" type="number" min="1" max="100" value={preferences.slowestCount} onChange={(event) => updatePreferences({ slowestCount: Math.max(1, Math.min(100, Number(event.target.value) || 1)) })} /></label>}
               </div>
               <div className="mb-4 flex flex-wrap gap-2">
-                <button className="cursor-pointer rounded border border-[#444] bg-transparent px-3 py-2 text-cube-text hover:border-cube-green" onClick={() => { setSelected(available.map((c) => c.name)); updatePreferences({ selectedCaseIds: null }); setIndex(0); }}>Select all</button>
+                <button className="cursor-pointer rounded border border-[#444] bg-transparent px-3 py-2 text-cube-text hover:border-cube-green" onClick={() => { setStatusShortcuts([LearningStatus.NotLearned, LearningStatus.Learning, LearningStatus.Learned]); setSelected(available.map((c) => c.name)); updatePreferences({ includeNotLearned: true, includeLearning: true, includeLearned: true, selectedCaseIds: null }); setIndex(0); }}>Select all</button>
                 <button className="cursor-pointer rounded border border-[#444] bg-transparent px-3 py-2 text-cube-text hover:border-cube-green" onClick={() => { updateSelected([]); setIndex(0); }}>Clear</button>
                 <button className="cursor-pointer rounded border border-[#444] bg-transparent px-3 py-2 text-cube-text hover:border-cube-green" onClick={() => setSelecting(false)}>Done</button>
               </div>
