@@ -1,4 +1,4 @@
-import type { CaseStatistics, PostSessionRequest, PostSolveRequest, PostTrainingAttemptRequest, Session, Solve, Statistics, TrainingResponse } from "./types";
+import type { CaseStatistics, LearningStatus, PostSessionRequest, PostSolveRequest, PostTrainingAttemptRequest, Session, Solve, Statistics, TrainingConfiguration, TrainingPreferences, TrainingResponse } from "./types";
 import type { Algorithm, AlgorithmSet } from "./types";
 
 export function getAlgorithmSet(name: string, signal?: AbortSignal): Promise<AlgorithmSet> {
@@ -85,6 +85,24 @@ export function getTraining(name: string): Promise<TrainingResponse> {
 
 export function getCaseStatistics(name: string, signal?: AbortSignal): Promise<CaseStatistics[]> {
   return request<CaseStatistics[]>(`/api/training/${encodeURIComponent(name)}/case-statistics`, { signal });
+}
+
+export function getTrainingConfiguration(name: string, signal?: AbortSignal): Promise<TrainingConfiguration> {
+  return request<TrainingConfiguration>(`/api/training/${encodeURIComponent(name)}/configuration`, { signal });
+}
+
+export function setCaseLearningStatus(name: string, caseId: number, status: LearningStatus): Promise<{ algorithmCaseId: number; status: LearningStatus }> {
+  return request(`/api/training/${encodeURIComponent(name)}/cases/${caseId}/status`, {
+    method: "PUT",
+    body: JSON.stringify({ status }),
+  });
+}
+
+export function saveTrainingPreferences(name: string, preferences: TrainingPreferences): Promise<TrainingPreferences> {
+  return request(`/api/training/${encodeURIComponent(name)}/preferences`, {
+    method: "PUT",
+    body: JSON.stringify(preferences),
+  });
 }
 
 export function createTrainingAttempt(name: string, data: PostTrainingAttemptRequest): Promise<Solve> {

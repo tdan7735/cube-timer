@@ -7,8 +7,8 @@ import { AlgorithmTrainer } from "./AlgorithmTrainer";
 export function AlgorithmSetTabs({ name }: { name: string }) {
   const [tab, setTab] = useState("algorithms");
   return (
-    <div>
-      <div className="flex justify-center border-b border-cube-border px-5" role="tablist" aria-label={`${name} pages`}>
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex shrink-0 justify-center border-b border-cube-border px-5" role="tablist" aria-label={`${name} pages`}>
         {["algorithms", "trainer"].map((value, index) => (
           <button key={value} role="tab" id={`${value}-tab`} aria-controls={`${value}-panel`}
             className={`min-w-32 cursor-pointer border border-cube-border bg-cube-surface px-5 py-3 text-[#aaa] ${tab === value ? "border-cube-green bg-cube-green/8 text-cube-green" : ""}`}
@@ -24,7 +24,7 @@ export function AlgorithmSetTabs({ name }: { name: string }) {
           </button>
         ))}
       </div>
-      <div role="tabpanel" id={`${tab}-panel`} aria-labelledby={`${tab}-tab`} tabIndex={0}>
+      <div className="min-h-0 flex-1 overflow-auto" role="tabpanel" id={`${tab}-panel`} aria-labelledby={`${tab}-tab`} tabIndex={0}>
         {tab === "algorithms" ? <AlgorithmBrowser name={name} /> : <AlgorithmTrainer name={name} />}
       </div>
     </div>

@@ -4,8 +4,8 @@ import Link from "next/link";
 import { PllDiagram } from "./PllDiagram";
 import { OllDiagram } from "./OllDiagram";
 import { useEffect, useState } from "react";
-import { getAlgorithmSet, getCaseStatistics, setStandardAlgorithm } from "../lib/api";
-import type { AlgorithmCase, AlgorithmSet, CaseStatistics } from "../lib/types";
+import { getAlgorithmSet, getCaseStatistics, getTrainingConfiguration, setCaseLearningStatus, setStandardAlgorithm } from "../lib/api";
+import { LearningStatus, type AlgorithmCase, type AlgorithmSet, type CaseStatistics } from "../lib/types";
 import { formatTime } from "../lib/format";
 
 function AlgorithmPicker({ item }: { item: AlgorithmCase }) {
@@ -78,15 +78,26 @@ function CaseStats({ stats }: { stats?: CaseStatistics }) {
   );
 }
 
-function Cases({ cases, setName, statistics }: { cases: AlgorithmCase[]; setName: string; statistics: Map<number, CaseStatistics> }) {
+const statusLabels: Record<LearningStatus, string> = { [LearningStatus.NotLearned]: "Not learned", [LearningStatus.Learning]: "Learning", [LearningStatus.Learned]: "Learned" };
+const statusHighlight: Record<LearningStatus, string> = {
+  [LearningStatus.NotLearned]: "border-transparent bg-transparent hover:border-[#555]",
+  [LearningStatus.Learning]: "border-amber-400/80 bg-amber-400/12 shadow-[0_0_18px_rgba(251,191,36,0.08)] hover:border-amber-300",
+  [LearningStatus.Learned]: "border-cube-green/80 bg-cube-green/12 shadow-[0_0_18px_rgba(74,222,128,0.08)] hover:border-cube-green",
+};
+
+function Cases({ cases, setName, statistics, statuses, onCycleStatus }: { cases: AlgorithmCase[]; setName: string; statistics: Map<number, CaseStatistics>; statuses: Map<number, LearningStatus>; onCycleStatus: (item: AlgorithmCase) => void }) {
   return <>{[...cases].sort((a, b) =>
     (a.caseNumber ?? 0) - (b.caseNumber ?? 0) || a.name.localeCompare(b.name)
-  ).map((item) => (
+  ).map((item) => {
+    const status = statuses.get(item.id) ?? LearningStatus.NotLearned;
+    return (
     <section className="mt-6" key={item.id}>
       <div className="mb-3 flex items-end justify-between gap-4"><h3>{item.name}</h3><CaseStats stats={statistics.get(item.id)} /></div>
       <div className="flex items-center gap-6 max-[600px]:flex-col max-[600px]:items-stretch max-[600px]:gap-3">
-      {setName === "PLL" && <PllDiagram name={item.name} />}
-      {setName === "OLL" && item.caseNumber != null && <OllDiagram caseNumber={item.caseNumber} />}
+      <button type="button" className={`cursor-pointer rounded-lg border-2 p-2 text-left transition-colors ${statusHighlight[status]}`} onClick={() => onCycleStatus(item)} title={`${statusLabels[status]} · Click to change status`} aria-label={`${item.name}: ${statusLabels[status]}. Change learning status`}>
+        {setName === "PLL" && <PllDiagram name={item.name} />}
+        {setName === "OLL" && item.caseNumber != null && <OllDiagram caseNumber={item.caseNumber} />}
+      </button>
       <div className="min-w-0 flex-1">
       {item.algorithms.length ? (
         <AlgorithmPicker item={item} />
@@ -94,29 +105,46 @@ function Cases({ cases, setName, statistics }: { cases: AlgorithmCase[]; setName
       </div>
       </div>
     </section>
-  ))}</>;
+  );})}</>;
 }
 
 export function AlgorithmBrowser({ name }: { name: string }) {
   const [data, setData] = useState<AlgorithmSet | null>(null);
   const [statistics, setStatistics] = useState<Map<number, CaseStatistics>>(new Map());
+  const [statuses, setStatuses] = useState<Map<number, LearningStatus>>(new Map());
   const [error, setError] = useState("");
+  const [statusError, setStatusError] = useState("");
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
-    Promise.all([getAlgorithmSet(name, controller.signal), getCaseStatistics(name, controller.signal)]).then(([set, caseStatistics]) => {
+    Promise.all([getAlgorithmSet(name, controller.signal), getCaseStatistics(name, controller.signal), getTrainingConfiguration(name, controller.signal)]).then(([set, caseStatistics, configuration]) => {
       setData(set);
       setStatistics(new Map(caseStatistics.map((stat) => [stat.algorithmCaseId, stat])));
+      setStatuses(new Map(configuration.statuses.map((item) => [item.algorithmCaseId, item.status])));
     }).catch(() => {
       if (!controller.signal.aborted) setError(`Could not load ${name} algorithms. Please try again.`);
     });
     return () => controller.abort();
   }, [name, attempt]);
 
+  const cycleStatus = async (item: AlgorithmCase) => {
+    const previous = statuses.get(item.id) ?? LearningStatus.NotLearned;
+    const next = ((previous + 1) % 3) as LearningStatus;
+    setStatuses((values) => new Map(values).set(item.id, next));
+    setStatusError("");
+    try {
+      await setCaseLearningStatus(name, item.id, next);
+    } catch {
+      setStatuses((values) => new Map(values).set(item.id, previous));
+      setStatusError(`Could not update ${item.name}. Please try again.`);
+    }
+  };
+
   return (
     <section className="mx-auto max-w-[1100px] px-6 py-10">
       <Link className="mb-6 inline-block text-cube-green" href="/algorithms">← All algorithms</Link>
+      {statusError && <p className="mb-4 text-cube-red" role="alert">{statusError}</p>}
       {error ? <div role="alert" className="mt-6">
         <p>{error}</p><button className="mt-2 cursor-pointer rounded-md border border-[#444] bg-cube-surface px-5 py-2.5 text-[15px] hover:border-cube-green" onClick={() => { setError(""); setAttempt(attempt + 1); }}>Retry</button>
       </div> : !data ? <p role="status">Loading algorithms…</p> : (
@@ -124,10 +152,10 @@ export function AlgorithmBrowser({ name }: { name: string }) {
           {data.groups.map((group) => (
             <section className="mt-8" key={group.id}>
               <h2>{group.name}</h2>
-              <Cases cases={group.cases} setName={name} statistics={statistics} />
+              <Cases cases={group.cases} setName={name} statistics={statistics} statuses={statuses} onCycleStatus={(item) => void cycleStatus(item)} />
             </section>
           ))}
-          <Cases cases={data.cases} setName={name} statistics={statistics} />
+          <Cases cases={data.cases} setName={name} statistics={statistics} statuses={statuses} onCycleStatus={(item) => void cycleStatus(item)} />
           {!data.groups.length && !data.cases.length && <p>No cases available yet.</p>}
         </>
       )}

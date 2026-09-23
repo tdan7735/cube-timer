@@ -37,6 +37,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .ToTable("Sessions", table => table.HasCheckConstraint(
                 "CK_Sessions_TrainingSession_AlgorithmSet",
                 "\"Type\" <> 1 OR \"AlgorithmSetId\" IS NOT NULL"));
+
+        modelBuilder.Entity<UserAlgorithmCaseProgress>()
+            .HasIndex(progress => new { progress.UserId, progress.AlgorithmCaseId })
+            .IsUnique();
+
+        modelBuilder.Entity<TrainingPreferences>()
+            .HasIndex(preferences => new { preferences.UserId, preferences.AlgorithmSetId })
+            .IsUnique();
     }
 
     public DbSet<AlgorithmSet> AlgorithmSets { get; set; }        // OLL, PLL, etc.
@@ -46,4 +54,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     public DbSet<Session> Sessions { get; set; }
     public DbSet<User> Users { get; set; }
+    public DbSet<UserAlgorithmCaseProgress> UserAlgorithmCaseProgress { get; set; }
+    public DbSet<TrainingPreferences> TrainingPreferences { get; set; }
 }

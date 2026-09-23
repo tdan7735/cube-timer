@@ -1,14 +1,19 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { createTrainingAttempt, deleteTrainingAttempt, deleteTrainingAttempts, getAlgorithmSet, getTraining } from "../lib/api";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { createTrainingAttempt, deleteTrainingAttempt, deleteTrainingAttempts, getAlgorithmSet, getCaseStatistics, getTraining, getTrainingConfiguration, saveTrainingPreferences, setCaseLearningStatus } from "../lib/api";
 import { generateCaseScramble, type CaseScramble } from "../lib/caseScramble";
-import type { AlgorithmCase, Solve } from "../lib/types";
+import { LearningStatus, TrainingFocus, TrainingOrder, type AlgorithmCase, type CaseStatistics, type Solve, type TrainingPreferences } from "../lib/types";
 import { Timer, type Phase } from "./Timer";
 import { Penalty } from "../lib/types";
 import { formatTime } from "../lib/format";
 
 const pllCases = ["Aa", "Ab", "E", "F", "Ga", "Gb", "Gc", "Gd", "H", "Ja", "Jb", "Na", "Nb", "Ra", "Rb", "T", "Ua", "Ub", "V", "Y", "Z"];
+const statusSelectHighlight: Record<LearningStatus, string> = {
+  [LearningStatus.NotLearned]: "border-[#444] bg-[#151515] text-cube-text",
+  [LearningStatus.Learning]: "border-amber-400/70 bg-amber-400/15 text-amber-200",
+  [LearningStatus.Learned]: "border-cube-green/70 bg-cube-green/15 text-green-200",
+};
 
 export function AlgorithmTrainer({ name }: { name: string }) {
   const cases = name === "OLL" ? Array.from({ length: 57 }, (_, i) => `OLL ${i + 1}`) : pllCases;
@@ -16,6 +21,9 @@ export function AlgorithmTrainer({ name }: { name: string }) {
   const [selecting, setSelecting] = useState(false);
   const [index, setIndex] = useState(0);
   const [available, setAvailable] = useState<AlgorithmCase[]>([]);
+  const [statuses, setStatuses] = useState<Map<number, LearningStatus>>(new Map());
+  const [caseStatistics, setCaseStatistics] = useState<Map<number, CaseStatistics>>(new Map());
+  const [preferences, setPreferences] = useState<TrainingPreferences>({ includeNotLearned: true, includeLearning: true, includeLearned: true, focus: TrainingFocus.All, slowestCount: 10, order: TrainingOrder.Balanced, selectedCaseIds: null });
   const [history, setHistory] = useState<CaseScramble[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -24,17 +32,21 @@ export function AlgorithmTrainer({ name }: { name: string }) {
   const [trainingError, setTrainingError] = useState("");
   const [savingAttempt, setSavingAttempt] = useState(false);
   const requestId = useRef(0);
+  const balancedBag = useRef<number[]>([]);
   const current = history[index];
 
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
     setError("");
-    getAlgorithmSet(name, controller.signal).then((set) => {
+    Promise.all([getAlgorithmSet(name, controller.signal), getTrainingConfiguration(name, controller.signal), getCaseStatistics(name, controller.signal)]).then(([set, configuration, statistics]) => {
       const byId = new Map([...set.cases, ...set.groups.flatMap((g) => g.cases)].map((c) => [c.id, c]));
       const usable = [...byId.values()].filter((c) => c.algorithms.some((a) => a.moves.trim()));
       setAvailable(usable);
-      setSelected(usable.map((c) => c.name));
+      setSelected(usable.filter((item) => configuration.preferences.selectedCaseIds === null || configuration.preferences.selectedCaseIds.includes(item.id)).map((c) => c.name));
+      setStatuses(new Map(configuration.statuses.map((item) => [item.algorithmCaseId, item.status])));
+      setPreferences(configuration.preferences);
+      setCaseStatistics(new Map(statistics.map((item) => [item.algorithmCaseId, item])));
       setLoading(false);
     }).catch(() => {
       if (!controller.signal.aborted) { setError("Could not load trainer cases."); setLoading(false); }
@@ -42,15 +54,56 @@ export function AlgorithmTrainer({ name }: { name: string }) {
     return () => { controller.abort(); requestId.current++; };
   }, [name, retry]);
 
+  const statusIncluded = useCallback((status: LearningStatus) =>
+    status === LearningStatus.NotLearned ? preferences.includeNotLearned
+      : status === LearningStatus.Learning ? preferences.includeLearning
+        : preferences.includeLearned, [preferences]);
+
+  const pool = useMemo(() => {
+    const statusFiltered = available.filter((item) => selected.includes(item.name) && statusIncluded(statuses.get(item.id) ?? LearningStatus.NotLearned));
+    return preferences.focus === TrainingFocus.Slowest
+    ? [...statusFiltered]
+      .filter((item) => caseStatistics.get(item.id)?.ao5 != null)
+      .sort((a, b) => {
+        const aValue = caseStatistics.get(a.id)!.ao5!;
+        const bValue = caseStatistics.get(b.id)!.ao5!;
+        const aScore = aValue < 0 ? Number.POSITIVE_INFINITY : aValue;
+        const bScore = bValue < 0 ? Number.POSITIVE_INFINITY : bValue;
+        return bScore - aScore || a.name.localeCompare(b.name);
+      })
+      .slice(0, preferences.slowestCount)
+    : statusFiltered;
+  }, [available, selected, statusIncluded, statuses, caseStatistics, preferences.focus, preferences.slowestCount]);
+  const poolKey = pool.map((item) => item.id).join(",");
+  const scheduleKey = `${poolKey}|${preferences.order}`;
+
+  const chooseCase = useCallback((items: AlgorithmCase[]) => {
+    if (preferences.order === TrainingOrder.Random) return items[Math.floor(Math.random() * items.length)];
+    const ids = new Set(items.map((item) => item.id));
+    balancedBag.current = balancedBag.current.filter((id) => ids.has(id));
+    if (!balancedBag.current.length) {
+      const previousId = current?.caseId;
+      balancedBag.current = items.map((item) => item.id);
+      for (let i = balancedBag.current.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [balancedBag.current[i], balancedBag.current[j]] = [balancedBag.current[j], balancedBag.current[i]];
+      }
+      if (balancedBag.current.length > 1 && balancedBag.current[0] === previousId) {
+        [balancedBag.current[0], balancedBag.current[1]] = [balancedBag.current[1], balancedBag.current[0]];
+      }
+    }
+    const id = balancedBag.current.shift();
+    return items.find((item) => item.id === id) ?? items[0];
+  }, [preferences.order, current?.caseId]);
+
   const nextScramble = useCallback(async (reset = false) => {
     const id = ++requestId.current;
-    const pool = available.filter((c) => selected.includes(c.name));
-    if (reset) { setHistory([]); setIndex(0); }
+    if (reset) { balancedBag.current = []; setHistory([]); setIndex(0); }
     setError("");
     if (!pool.length) { setLoading(false); return; }
     setLoading(true);
     try {
-      const generated = await generateCaseScramble(pool);
+      const generated = await generateCaseScramble(pool, chooseCase(pool));
       if (id !== requestId.current) return;
       setHistory((previous) => [...(reset ? [] : previous.slice(0, index + 1)), generated]);
       setIndex(reset ? 0 : index + 1);
@@ -59,11 +112,12 @@ export function AlgorithmTrainer({ name }: { name: string }) {
     } finally {
       if (id === requestId.current) setLoading(false);
     }
-  }, [available, selected, index]);
+  }, [pool, index, chooseCase]);
 
   const refreshTraining = useCallback(async () => {
-    const training = await getTraining(name);
+    const [training, statistics] = await Promise.all([getTraining(name), getCaseStatistics(name)]);
     setAttempts(training.attempts);
+    setCaseStatistics(new Map(statistics.map((item) => [item.algorithmCaseId, item])));
   }, [name]);
 
   useEffect(() => {
@@ -77,7 +131,30 @@ export function AlgorithmTrainer({ name }: { name: string }) {
     return () => { requestId.current++; };
     // Index changes navigate history and must not reset it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [available, selected]);
+  }, [scheduleKey]);
+
+  const updatePreferences = (changes: Partial<TrainingPreferences>) => {
+    const updated = { ...preferences, ...changes };
+    setPreferences(updated);
+    setTrainingError("");
+    void saveTrainingPreferences(name, updated).catch(() => setTrainingError("Could not save training filters."));
+  };
+
+  const updateSelected = (names: string[]) => {
+    setSelected(names);
+    updatePreferences({ selectedCaseIds: available.filter((item) => names.includes(item.name)).map((item) => item.id) });
+  };
+
+  const updateStatus = async (item: AlgorithmCase, status: LearningStatus) => {
+    const previous = statuses.get(item.id) ?? LearningStatus.NotLearned;
+    setStatuses((values) => new Map(values).set(item.id, status));
+    try {
+      await setCaseLearningStatus(name, item.id, status);
+    } catch {
+      setStatuses((values) => new Map(values).set(item.id, previous));
+      setTrainingError(`Could not update ${item.name}.`);
+    }
+  };
   const [phase, setPhase] = useState<Phase>("idle");
   const busy = phase !== "idle" || savingAttempt;
   const valid = attempts.filter((a) => a.penalty !== Penalty.DNF);
@@ -112,6 +189,9 @@ export function AlgorithmTrainer({ name }: { name: string }) {
         algorithmCaseId: current.caseId,
       });
       setAttempts((previous) => previous.map((attempt) => attempt.id === temporaryId ? savedAttempt : attempt));
+      void getCaseStatistics(name)
+        .then((statistics) => setCaseStatistics(new Map(statistics.map((item) => [item.algorithmCaseId, item]))))
+        .catch(() => setTrainingError("Attempt saved, but case statistics could not be refreshed."));
     } catch {
       setAttempts((previous) => previous.filter((attempt) => attempt.id !== temporaryId));
       setTrainingError("Could not save this training attempt.");
@@ -141,35 +221,46 @@ export function AlgorithmTrainer({ name }: { name: string }) {
   };
 
   return (
-    <section className="px-4 pt-6 pb-8 [padding-inline:clamp(16px,3vw,48px)]" aria-label={`${name} trainer`}>
-      <div className="mt-5 overflow-hidden rounded-lg border border-[#383838]">
+    <section className="px-4 pb-8 [padding-inline:clamp(16px,3vw,48px)] lg:h-full lg:min-h-0 lg:pb-0" aria-label={`${name} trainer`}>
+      <div className="overflow-hidden rounded-lg border border-[#383838] lg:flex lg:h-full lg:min-h-0 lg:flex-col lg:rounded-t-none lg:border-t-0">
         <div className="flex min-h-[92px] items-center justify-between gap-5 border-b border-[#383838] bg-cube-surface px-4 py-3">
           <button className="cursor-pointer border-0 bg-transparent px-2 text-3xl text-cube-text disabled:cursor-default disabled:opacity-40" aria-label="Previous scramble" disabled={busy || loading || index === 0} onClick={() => setIndex((i) => i - 1)}>‹</button>
-          <div className="min-w-0 text-center"><span className="text-[10px] uppercase tracking-[1.5px] text-[#999]">Case scramble</span><p className="mt-1.5 font-mono text-[clamp(16px,1.6vw,24px)] leading-relaxed wrap-anywhere select-text">{loading ? "" : selected.length ? current?.scramble : "Select cases to begin"}</p></div>
-          <button className="cursor-pointer border-0 bg-transparent px-2 text-3xl text-cube-text disabled:cursor-default disabled:opacity-40" aria-label="Next scramble" disabled={busy || loading || !selected.length} onClick={() => index < history.length - 1 ? setIndex(index + 1) : void nextScramble()}>›</button>
+          <div className="min-w-0 text-center"><span className="text-[10px] uppercase tracking-[1.5px] text-[#999]">Case scramble</span><p className="mt-1.5 font-mono text-[clamp(16px,1.6vw,24px)] leading-relaxed wrap-anywhere select-text">{loading ? "" : pool.length ? current?.scramble : "Select cases to begin"}</p></div>
+          <button className="cursor-pointer border-0 bg-transparent px-2 text-3xl text-cube-text disabled:cursor-default disabled:opacity-40" aria-label="Next scramble" disabled={busy || loading || !pool.length} onClick={() => index < history.length - 1 ? setIndex(index + 1) : void nextScramble()}>›</button>
         </div>
         {error && <p role="alert" className="p-4 text-[13px] leading-relaxed text-[#999]">{error} <button className="cursor-pointer rounded border border-[#444] bg-transparent px-3 py-2 text-cube-text hover:border-cube-green" onClick={() => available.length ? void nextScramble(true) : setRetry((n) => n + 1)}>Retry</button></p>}
         <p className="p-4 text-[13px] leading-relaxed text-[#999]">Only cases with saved algorithms are available. Practice times are saved to your {name} training session.</p>
         {trainingError && <p role="alert" className="px-4 pb-4 text-[13px] leading-relaxed text-cube-red">{trainingError}</p>}
-        <div className="grid min-h-[min(650px,70vh)] grid-cols-1 lg:grid-cols-[minmax(0,1fr)_230px_230px]">
+        <div className="grid min-h-[min(650px,70vh)] grid-cols-1 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_230px_230px]">
           <div className="relative flex min-w-0 flex-col items-center border-b border-[#383838] p-5 lg:col-span-1 lg:border-b-0">
             <button className="cursor-pointer border border-transparent bg-transparent px-3 py-2 text-sm text-cube-green disabled:cursor-default disabled:opacity-40" disabled={busy} aria-expanded={selecting} aria-controls="trainer-case-selection"
-              onClick={() => setSelecting(!selecting)}>{selected.length} cases selected <span className="text-[#999]">· Choose cases</span></button>
+              onClick={() => setSelecting(!selecting)}>{pool.length} cases selected <span className="text-[#999]">· Choose cases</span></button>
             {selecting && <div className="mt-3 w-full rounded-md border border-[#444] bg-cube-surface p-4" id="trainer-case-selection">
+              <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <fieldset className="rounded border border-[#383838] p-3"><legend className="px-1 text-xs text-[#999]">Statuses</legend>
+                  {([["Not learned", "includeNotLearned"], ["Learning", "includeLearning"], ["Learned", "includeLearned"]] as const).map(([label, key]) => <label className="mr-4 inline-flex items-center gap-2 text-[13px]" key={key}><input className="accent-cube-green" type="checkbox" checked={preferences[key]} onChange={(event) => updatePreferences({ [key]: event.target.checked })} />{label}</label>)}
+                </fieldset>
+                <label className="text-xs text-[#999]">Focus<select className="mt-1 block w-full rounded border border-[#444] bg-[#151515] p-2 text-cube-text" value={preferences.focus} onChange={(event) => updatePreferences({ focus: Number(event.target.value) as TrainingFocus })}><option value={TrainingFocus.All}>All eligible</option><option value={TrainingFocus.Slowest}>Slowest</option></select></label>
+                <label className="text-xs text-[#999]">Order<select className="mt-1 block w-full rounded border border-[#444] bg-[#151515] p-2 text-cube-text" value={preferences.order} onChange={(event) => updatePreferences({ order: Number(event.target.value) as TrainingOrder })}><option value={TrainingOrder.Balanced}>Balanced</option><option value={TrainingOrder.Random}>Random</option></select></label>
+                {preferences.focus === TrainingFocus.Slowest && <label className="text-xs text-[#999]">Number of slowest cases<input className="mt-1 block w-full rounded border border-[#444] bg-[#151515] p-2 text-cube-text" type="number" min="1" max="100" value={preferences.slowestCount} onChange={(event) => updatePreferences({ slowestCount: Math.max(1, Math.min(100, Number(event.target.value) || 1)) })} /></label>}
+              </div>
               <div className="mb-4 flex flex-wrap gap-2">
-                <button className="cursor-pointer rounded border border-[#444] bg-transparent px-3 py-2 text-cube-text hover:border-cube-green" onClick={() => { setSelected(available.map((c) => c.name)); setIndex(0); }}>Select all</button>
-                <button className="cursor-pointer rounded border border-[#444] bg-transparent px-3 py-2 text-cube-text hover:border-cube-green" onClick={() => { setSelected([]); setIndex(0); }}>Clear</button>
+                <button className="cursor-pointer rounded border border-[#444] bg-transparent px-3 py-2 text-cube-text hover:border-cube-green" onClick={() => { setSelected(available.map((c) => c.name)); updatePreferences({ selectedCaseIds: null }); setIndex(0); }}>Select all</button>
+                <button className="cursor-pointer rounded border border-[#444] bg-transparent px-3 py-2 text-cube-text hover:border-cube-green" onClick={() => { updateSelected([]); setIndex(0); }}>Clear</button>
                 <button className="cursor-pointer rounded border border-[#444] bg-transparent px-3 py-2 text-cube-text hover:border-cube-green" onClick={() => setSelecting(false)}>Done</button>
               </div>
-              <div className="grid max-h-[230px] grid-cols-[repeat(auto-fit,minmax(86px,1fr))] gap-3 overflow-auto">{cases.map((item) => (
-                <label className="flex cursor-pointer items-center gap-2 text-[13px]" key={item}><input className="accent-cube-green" type="checkbox" disabled={!available.some((c) => c.name === item)} checked={selected.includes(item)} onChange={() => {
-                  setSelected((previous) => previous.includes(item) ? previous.filter((c) => c !== item) : [...previous, item]);
+              <div className="grid max-h-[230px] grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3 overflow-auto">{cases.map((item) => {
+                const algorithmCase = available.find((candidate) => candidate.name === item);
+                const caseStatus = algorithmCase ? statuses.get(algorithmCase.id) ?? LearningStatus.NotLearned : LearningStatus.NotLearned;
+                return <div className="flex items-center gap-2 text-[13px]" key={item}><label className="flex cursor-pointer items-center gap-2"><input className="accent-cube-green" type="checkbox" disabled={!algorithmCase} checked={selected.includes(item)} onChange={() => {
+                  updateSelected(selected.includes(item) ? selected.filter((c) => c !== item) : [...selected, item]);
                   setIndex(0);
-                }} />{item}</label>
-              ))}</div>
+                }} />{item}</label>{algorithmCase && <select aria-label={`${item} learning status`} className={`min-w-0 rounded border px-1 py-1 text-xs font-medium ${statusSelectHighlight[caseStatus]}`} value={caseStatus} onChange={(event) => void updateStatus(algorithmCase, Number(event.target.value) as LearningStatus)}><option value={LearningStatus.NotLearned}>Not learned</option><option value={LearningStatus.Learning}>Learning</option><option value={LearningStatus.Learned}>Learned</option></select>}</div>;
+              })}</div>
+              {preferences.focus === TrainingFocus.Slowest && !pool.length && <p className="mt-3 text-[13px] text-[#999]">No matching cases have an Ao5 yet.</p>}
             </div>}
             <div className="flex min-h-[320px] flex-1 flex-col items-center justify-center gap-6">
-              <Timer disabled={selecting || loading || !!error || !current || savingAttempt || !selected.includes(current.caseName)} onPhaseChange={setPhase} onSolve={(time, penalty) => void saveAttempt(time, penalty)} />
+              <Timer disabled={selecting || loading || !!error || !current || savingAttempt || !pool.some((item) => item.id === current.caseId)} onPhaseChange={setPhase} onSolve={(time, penalty) => void saveAttempt(time, penalty)} />
             </div>
           </div>
           <aside className="border-l border-[#383838] bg-[#151515] px-[18px] py-6" aria-label="Practice attempts">

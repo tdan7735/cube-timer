@@ -27,28 +27,94 @@ public class TrainingController(AppDbContext context, StatisticsService statisti
             return BadRequest("Training is currently available only for OLL and PLL.");
         }
 
-        var caseStatistics = await context.Solves
+        var caseSolves = await context.Solves
             .Where(solve =>
                 solve.Session != null &&
                 solve.Session.UserId == user.Id &&
                 solve.Session.Type == SessionType.AlgorithmTraining &&
                 solve.Session.AlgorithmSetId == algorithmSet.Id &&
                 solve.AlgorithmCaseId != null)
-            .GroupBy(solve => new { solve.AlgorithmCaseId, solve.AlgorithmCase!.Name })
-            .Select(group => new CaseStatisticsResponse {
-                AlgorithmCaseId = group.Key.AlgorithmCaseId!.Value,
-                AlgorithmCaseName = group.Key.Name,
-                AttemptCount = group.Count(),
-                BestTime = group
-                    .Where(solve => solve.Penalty != Penalty.DNF)
-                    .Min(solve => (int?)(solve.SolveTime + (solve.Penalty == Penalty.Plus2 ? 2000 : 0))),
-                AverageTime = group
-                    .Where(solve => solve.Penalty != Penalty.DNF)
-                    .Average(solve => (double?)(solve.SolveTime + (solve.Penalty == Penalty.Plus2 ? 2000 : 0))),
-            })
+            .Include(solve => solve.AlgorithmCase)
             .ToListAsync();
 
+        var caseStatistics = caseSolves
+            .GroupBy(solve => new { solve.AlgorithmCaseId, solve.AlgorithmCase!.Name })
+            .Select(group => {
+                var solves = group.ToList();
+                var valid = solves.Where(solve => solve.Penalty != Penalty.DNF).ToList();
+                return new CaseStatisticsResponse {
+                    AlgorithmCaseId = group.Key.AlgorithmCaseId!.Value,
+                    AlgorithmCaseName = group.Key.Name,
+                    AttemptCount = solves.Count,
+                    BestTime = valid.Count == 0 ? null : valid.Min(solve => solve.FinalTime()),
+                    AverageTime = valid.Count == 0 ? null : valid.Average(solve => solve.FinalTime()),
+                    Ao5 = statistics.CalculateAo5(solves),
+                };
+            })
+            .ToList();
+
         return Ok(caseStatistics);
+    }
+
+    [HttpGet("{algorithmSetName}/configuration")]
+    public async Task<IActionResult> GetConfiguration([FromRoute] string algorithmSetName) {
+        var lookup = await GetUserAndSet(algorithmSetName);
+        if (lookup.Error is not null) return lookup.Error;
+
+        var statuses = await context.UserAlgorithmCaseProgress
+            .Where(progress => progress.UserId == lookup.User!.Id && progress.AlgorithmCase.AlgorithmSetId == lookup.AlgorithmSet!.Id)
+            .Select(progress => new CaseStatusResponse(progress.AlgorithmCaseId, progress.Status))
+            .ToListAsync();
+        var preferences = await context.TrainingPreferences.SingleOrDefaultAsync(item =>
+            item.UserId == lookup.User!.Id && item.AlgorithmSetId == lookup.AlgorithmSet!.Id);
+
+        return Ok(new TrainingConfigurationResponse(statuses, PreferencesResponse.From(preferences)));
+    }
+
+    [HttpPut("{algorithmSetName}/cases/{algorithmCaseId}/status")]
+    public async Task<IActionResult> PutCaseStatus([FromRoute] string algorithmSetName, [FromRoute] int algorithmCaseId, [FromBody] PutCaseStatusRequest request) {
+        if (!Enum.IsDefined(request.Status)) return BadRequest("Status is invalid.");
+        var lookup = await GetUserAndSet(algorithmSetName);
+        if (lookup.Error is not null) return lookup.Error;
+        var belongs = await context.AlgorithmCases.AnyAsync(item => item.Id == algorithmCaseId && item.AlgorithmSetId == lookup.AlgorithmSet!.Id);
+        if (!belongs) return BadRequest("Algorithm case does not belong to this training set.");
+
+        var progress = await context.UserAlgorithmCaseProgress.SingleOrDefaultAsync(item => item.UserId == lookup.User!.Id && item.AlgorithmCaseId == algorithmCaseId);
+        if (progress is null) {
+            progress = new UserAlgorithmCaseProgress { UserId = lookup.User!.Id, AlgorithmCaseId = algorithmCaseId };
+            context.UserAlgorithmCaseProgress.Add(progress);
+        }
+        progress.Status = request.Status;
+        progress.UpdatedAt = DateTime.UtcNow;
+        await context.SaveChangesAsync();
+        return Ok(new CaseStatusResponse(algorithmCaseId, progress.Status));
+    }
+
+    [HttpPut("{algorithmSetName}/preferences")]
+    public async Task<IActionResult> PutPreferences([FromRoute] string algorithmSetName, [FromBody] PutPreferencesRequest request) {
+        if (!Enum.IsDefined(request.Focus) || !Enum.IsDefined(request.Order) || request.SlowestCount is < 1 or > 100) {
+            return BadRequest("Training preferences are invalid.");
+        }
+        var lookup = await GetUserAndSet(algorithmSetName);
+        if (lookup.Error is not null) return lookup.Error;
+        if (request.SelectedCaseIds is not null) {
+            var validCaseCount = await context.AlgorithmCases.CountAsync(item => item.AlgorithmSetId == lookup.AlgorithmSet!.Id && request.SelectedCaseIds.Contains(item.Id));
+            if (validCaseCount != request.SelectedCaseIds.Distinct().Count()) return BadRequest("Selected cases must belong to this training set.");
+        }
+        var preferences = await context.TrainingPreferences.SingleOrDefaultAsync(item => item.UserId == lookup.User!.Id && item.AlgorithmSetId == lookup.AlgorithmSet!.Id);
+        if (preferences is null) {
+            preferences = new TrainingPreferences { UserId = lookup.User!.Id, AlgorithmSetId = lookup.AlgorithmSet!.Id };
+            context.TrainingPreferences.Add(preferences);
+        }
+        preferences.IncludeNotLearned = request.IncludeNotLearned;
+        preferences.IncludeLearning = request.IncludeLearning;
+        preferences.IncludeLearned = request.IncludeLearned;
+        preferences.Focus = request.Focus;
+        preferences.SlowestCount = request.SlowestCount;
+        preferences.Order = request.Order;
+        preferences.SelectedCaseIds = request.SelectedCaseIds?.Distinct().ToArray();
+        await context.SaveChangesAsync();
+        return Ok(PreferencesResponse.From(preferences));
     }
 
     [HttpPost("{algorithmSetName}/attempts")]
@@ -146,6 +212,15 @@ public class TrainingController(AppDbContext context, StatisticsService statisti
     private async Task<User?> GetDefaultUser() => await context.Users
         .SingleOrDefaultAsync(user => user.Username == UserSeeder.DefaultUsername);
 
+    private async Task<(User? User, AlgorithmSet? AlgorithmSet, IActionResult? Error)> GetUserAndSet(string algorithmSetName) {
+        var user = await GetDefaultUser();
+        if (user is null) return (null, null, NotFound("User not found"));
+        var algorithmSet = await context.AlgorithmSets.SingleOrDefaultAsync(set => set.Name.ToLower() == algorithmSetName.ToLower());
+        if (algorithmSet is null) return (user, null, NotFound("Algorithm set not found"));
+        if (GetSolveType(algorithmSet) is null) return (user, algorithmSet, BadRequest("Training is currently available only for OLL and PLL."));
+        return (user, algorithmSet, null);
+    }
+
     private async Task<Session> GetOrCreateTrainingSession(User user, AlgorithmSet algorithmSet) {
         var session = await context.Sessions.SingleOrDefaultAsync(session =>
             session.UserId == user.Id &&
@@ -213,4 +288,15 @@ public class CaseStatisticsResponse {
     public int AttemptCount { get; set; }
     public int? BestTime { get; set; }
     public double? AverageTime { get; set; }
+    public double? Ao5 { get; set; }
+}
+
+public record PutCaseStatusRequest(AlgorithmLearningStatus Status);
+public record CaseStatusResponse(int AlgorithmCaseId, AlgorithmLearningStatus Status);
+public record PutPreferencesRequest(bool IncludeNotLearned, bool IncludeLearning, bool IncludeLearned, TrainingFocus Focus, int SlowestCount, TrainingOrder Order, int[]? SelectedCaseIds);
+public record TrainingConfigurationResponse(List<CaseStatusResponse> Statuses, PreferencesResponse Preferences);
+public record PreferencesResponse(bool IncludeNotLearned, bool IncludeLearning, bool IncludeLearned, TrainingFocus Focus, int SlowestCount, TrainingOrder Order, int[]? SelectedCaseIds) {
+    public static PreferencesResponse From(TrainingPreferences? preferences) => preferences is null
+        ? new(true, true, true, TrainingFocus.All, 10, TrainingOrder.Balanced, null)
+        : new(preferences.IncludeNotLearned, preferences.IncludeLearning, preferences.IncludeLearned, preferences.Focus, preferences.SlowestCount, preferences.Order, preferences.SelectedCaseIds);
 }

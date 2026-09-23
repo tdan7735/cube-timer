@@ -7,9 +7,9 @@ export interface CaseScramble {
 }
 
 // Load the puzzle and solver only when the trainer needs them.
-export async function generateCaseScramble(cases: AlgorithmCase[]): Promise<CaseScramble> {
+export async function generateCaseScramble(cases: AlgorithmCase[], selectedCase?: AlgorithmCase): Promise<CaseScramble> {
   if (!cases.length) throw new Error("Select at least one available case.");
-  const item = cases[Math.floor(Math.random() * cases.length)];
+  const item = selectedCase ?? cases[Math.floor(Math.random() * cases.length)];
   const algorithms = [...item.algorithms].sort((a, b) => a.id - b.id);
   const algorithm = algorithms.find((a) => a.isStandard) ?? algorithms[0];
   if (!algorithm?.moves.trim()) throw new Error(`${item.name} has no saved algorithm.`);

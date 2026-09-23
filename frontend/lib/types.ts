@@ -74,6 +74,34 @@ export interface CaseStatistics {
   attemptCount: number;
   bestTime: number | null;
   averageTime: number | null;
+  ao5: number | null;
+}
+
+export const LearningStatus = {
+  NotLearned: 0,
+  Learning: 1,
+  Learned: 2,
+} as const;
+export type LearningStatus = (typeof LearningStatus)[keyof typeof LearningStatus];
+
+export const TrainingFocus = { All: 0, Slowest: 1 } as const;
+export type TrainingFocus = (typeof TrainingFocus)[keyof typeof TrainingFocus];
+export const TrainingOrder = { Balanced: 0, Random: 1 } as const;
+export type TrainingOrder = (typeof TrainingOrder)[keyof typeof TrainingOrder];
+
+export interface TrainingPreferences {
+  includeNotLearned: boolean;
+  includeLearning: boolean;
+  includeLearned: boolean;
+  focus: TrainingFocus;
+  slowestCount: number;
+  order: TrainingOrder;
+  selectedCaseIds: number[] | null;
+}
+
+export interface TrainingConfiguration {
+  statuses: { algorithmCaseId: number; status: LearningStatus }[];
+  preferences: TrainingPreferences;
 }
 
 export interface Algorithm {

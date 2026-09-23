@@ -13,16 +13,17 @@ export default function AlgorithmsPage() {
       <p className="leading-relaxed text-[#aaa]">Explore last-layer algorithms.</p>
       <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2">
         {[
-          { name: "OLL", description: "Orientation of the Last Layer", count: "57 cases" },
-          { name: "PLL", description: "Permutation of the Last Layer", count: "21 cases" },
-        ].map(({ name, description, count }) => (
+          { name: "OLL", description: "Orientation of the Last Layer", count: "57 cases", image: "/oll.webp" },
+          { name: "PLL", description: "Permutation of the Last Layer", count: "21 cases", image: "/pll.png" },
+        ].map(({ name, description, count, image }) => (
           <Link href={`/algorithms/${name.toLowerCase()}`} className="block overflow-hidden rounded-xl border border-cube-border bg-cube-surface text-inherit no-underline hover:border-cube-green focus-visible:border-cube-green" key={name} aria-labelledby={`card-${name}`}>
-            <div className="aspect-video border-b border-cube-border">
+            <div className="relative aspect-video border-b border-cube-border bg-[#151515] p-5">
               <Image
-                src="/algorithm-placeholder.svg"
-                alt={`${name} image placeholder`}
-                width={480}
-                height={270}
+                src={image}
+                alt={`${name} case overview`}
+                fill
+                sizes="(min-width: 640px) 50vw, 100vw"
+                className="object-contain p-5"
               />
             </div>
             <div className="p-6">
