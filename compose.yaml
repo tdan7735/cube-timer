@@ -1,4 +1,35 @@
 services:
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        API_PROXY_TARGET: http://backend:8080
+    environment:
+      API_PROXY_TARGET: http://backend:8080
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_started
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      Db__DefaultConnection: "Host=database;Port=5432;Database=${LOCAL_POSTGRES_DB:-cube_timer};Username=${LOCAL_POSTGRES_USER:-cube_timer};Password=${LOCAL_POSTGRES_PASSWORD:-cube_timer_dev}"
+    ports:
+      - "${BACKEND_PORT:-5164}:8080"
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: unless-stopped
+
   database:
     image: postgres:17-alpine
     environment:
@@ -14,6 +45,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
 
   pgweb:
     image: sosedoff/pgweb:latest
@@ -24,6 +56,7 @@ services:
     depends_on:
       database:
         condition: service_healthy
+    restart: unless-stopped
 
 volumes:
   cube_timer_postgres:

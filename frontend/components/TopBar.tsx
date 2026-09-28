@@ -7,7 +7,7 @@ export function TopBar() {
   const pathname = usePathname();
 
   return (
-    <header className="shrink-0 border-b border-cube-border bg-cube-surface px-5">
+    <header className="shrink-0 border-b border-cube-border bg-cube-surface px-5" data-app-top-bar>
       <nav className="flex justify-center" aria-label="Main navigation">
         {[
           { href: "/", label: "Timer" },

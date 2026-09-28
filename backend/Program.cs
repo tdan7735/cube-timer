@@ -33,6 +33,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope()) {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
+    await context.Database.MigrateAsync();
     await UserSeeder.SeedAsync(context);
     await AlgorithmSeeder.SeedAsync(context);
 }
@@ -46,6 +47,7 @@ app.UseHttpsRedirection();
 
 // Map controller endpoints
 app.MapControllers();
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 
 Console.WriteLine("Starting server...");
 app.Run();

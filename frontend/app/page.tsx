@@ -192,7 +192,7 @@ export default function Home() {
   const timing = phase !== "idle";
 
   return (
-    <div className="flex h-full">
+    <div className="flex h-full" data-timer-active={timing}>
       <div className="relative flex flex-1 flex-col items-center justify-center gap-8">
         {!timing && <div className="absolute top-8 right-0 left-0 animate-fade-in text-center font-mono text-2xl leading-normal tracking-[1.5px] text-cube-text">
           {loadingScramble ? "" : scramble}
